@@ -1,0 +1,364 @@
+{
+  "meta": {
+    "session_id": "test_20260127_192532",
+    "generated_at": "2026-01-27T19:25:49.571504",
+    "generator": "ArbitrageTestingFramework",
+    "version": "1.0.0"
+  },
+  "summary": {
+    "total_trades": 5,
+    "successful_trades": 0,
+    "partial_trades": 0,
+    "rolled_back_trades": 0,
+    "failed_trades": 5,
+    "win_rate": 0.0,
+    "total_pnl_usd": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_ratio": null
+  },
+  "pnl": {
+    "gross_profit_usd": 0.0,
+    "gross_loss_usd": 0.0,
+    "total_fees_usd": 0.0,
+    "net_pnl_usd": 0.0,
+    "average_profit_per_trade": 0.0,
+    "average_loss_per_trade": 0.0
+  },
+  "risk": {
+    "max_drawdown_usd": 0.0,
+    "max_drawdown_pct": 0.0
+  },
+  "loss_breakdown": {
+    "slippage": {
+      "leg1_usd": 0.0,
+      "leg2_usd": 0.0,
+      "total_usd": 0.0
+    },
+    "fees_exceeded_usd": 0.0,
+    "partial_fills_usd": 2.1680539807078345,
+    "failed_leg2_usd": 0.0,
+    "rollback_costs_usd": 0.0,
+    "stale_quotes_usd": 0.0,
+    "total_usd": 2.1680539807078345
+  },
+  "timing": {
+    "session_duration_seconds": 17.5564,
+    "execution_time_ms": {
+      "average": 3510.4,
+      "maximum": 3515,
+      "minimum": 3508
+    },
+    "quote_age_ms": {
+      "average": 0.0031000000000000003,
+      "maximum": 0.006,
+      "stale_count": 0
+    }
+  },
+  "warnings": [
+    {
+      "level": "medium",
+      "category": "partial_fills",
+      "message": "Partial fills account for 100.0% of losses",
+      "affected_trade_ids": [],
+      "metric_value": 1.0,
+      "threshold": 0.2
+    }
+  ],
+  "notable_trades": {
+    "best": {
+      "trade_id": null,
+      "pnl_usd": null
+    },
+    "worst": {
+      "trade_id": null,
+      "pnl_usd": null
+    }
+  },
+  "all_trades": [
+    {
+      "journal_id": "JOURNAL-40781FA849B5",
+      "spread_id": "SPREAD-B842D76A",
+      "status": "failed",
+      "detected_at": "2026-01-27T19:25:32.014345",
+      "duration_ms": 3508,
+      "input": {
+        "leg1": {
+          "exchange": "paper",
+          "ticker": "DEMO-000-YES",
+          "bid": 0.4873256502674187,
+          "ask": 0.5076357321534709,
+          "age_ms": 0.005
+        },
+        "leg2": {
+          "exchange": "paper",
+          "ticker": "DEMO-000-NO",
+          "bid": 0.4176866850951134,
+          "ask": 0.43770817166687676,
+          "age_ms": 0.001
+        },
+        "expected_profit": 0.3354682465675182
+      },
+      "decision": {
+        "rank": 1,
+        "total_opportunities": 5,
+        "edge_cents": 3.7274249618613142,
+        "roi_pct": 0.07553051799939775
+      },
+      "execution": {
+        "leg1_filled": false,
+        "leg1_price": null,
+        "leg1_size": 0,
+        "leg2_filled": false,
+        "leg2_price": null,
+        "leg2_size": 0
+      },
+      "pnl": {
+        "expected_gross": 0.29819399694890514,
+        "expected_net": 0.3354682465675182,
+        "actual_gross": null,
+        "actual_net": null,
+        "slippage_leg1": 0.0,
+        "slippage_leg2": 0.0,
+        "fee_variance": -0.6426825619494616,
+        "partial_fill_loss": 0.3354682465675182,
+        "rollback_loss": 0.0,
+        "primary_loss_category": "partial_fill"
+      },
+      "what_if": {
+        "optimal_profit": -8.680083041131498,
+        "maker_fee_savings": 0.31482166470425127,
+        "timing_loss": 0.0
+      },
+      "event_count": 4,
+      "error": "Leg 1 execution failed"
+    },
+    {
+      "journal_id": "JOURNAL-78002ED7FBB1",
+      "spread_id": "SPREAD-1C2AD076",
+      "status": "failed",
+      "detected_at": "2026-01-27T19:25:35.522907",
+      "duration_ms": 3515,
+      "input": {
+        "leg1": {
+          "exchange": "paper",
+          "ticker": "DEMO-001-YES",
+          "bid": 0.39020750549425315,
+          "ask": 0.41810781107355477,
+          "age_ms": 0.005
+        },
+        "leg2": {
+          "exchange": "paper",
+          "ticker": "DEMO-001-NO",
+          "bid": 0.42222248139456653,
+          "ask": 0.43306217131748614,
+          "age_ms": 0.001
+        },
+        "expected_profit": 0.6230083026913027
+      },
+      "decision": {
+        "rank": 2,
+        "total_opportunities": 5,
+        "edge_cents": 6.922314474347807,
+        "roi_pct": 0.06334144345979806
+      },
+      "execution": {
+        "leg1_filled": false,
+        "leg1_price": null,
+        "leg1_size": 0,
+        "leg2_filled": false,
+        "leg2_price": null,
+        "leg2_size": 0
+      },
+      "pnl": {
+        "expected_gross": 0.8306777369217369,
+        "expected_net": 0.6230083026913027,
+        "actual_gross": null,
+        "actual_net": null,
+        "slippage_leg1": 0.0,
+        "slippage_leg2": 0.0,
+        "fee_variance": -0.8843473916896099,
+        "partial_fill_loss": 0.6230083026913027,
+        "rollback_loss": 0.0,
+        "primary_loss_category": "partial_fill"
+      },
+      "what_if": {
+        "optimal_profit": 0.3970656859776348,
+        "maker_fee_savings": 0,
+        "timing_loss": 0.0
+      },
+      "event_count": 4,
+      "error": "Leg 1 execution failed"
+    },
+    {
+      "journal_id": "JOURNAL-C88925F32584",
+      "spread_id": "SPREAD-1FBE85C5",
+      "status": "failed",
+      "detected_at": "2026-01-27T19:25:39.038904",
+      "duration_ms": 3512,
+      "input": {
+        "leg1": {
+          "exchange": "paper",
+          "ticker": "DEMO-002-YES",
+          "bid": 0.5740323524412347,
+          "ask": 0.5904661322460913,
+          "age_ms": 0.005
+        },
+        "leg2": {
+          "exchange": "paper",
+          "ticker": "DEMO-002-NO",
+          "bid": 0.515599070540568,
+          "ask": 0.5353198978310847,
+          "age_ms": 0.001
+        },
+        "expected_profit": 0.308096174615695
+      },
+      "decision": {
+        "rank": 3,
+        "total_opportunities": 5,
+        "edge_cents": 3.4232908290632746,
+        "roi_pct": 0.03893056288596529
+      },
+      "execution": {
+        "leg1_filled": false,
+        "leg1_price": null,
+        "leg1_size": 0,
+        "leg2_filled": false,
+        "leg2_price": null,
+        "leg2_size": 0
+      },
+      "pnl": {
+        "expected_gross": 0.23963035803442923,
+        "expected_net": 0.308096174615695,
+        "actual_gross": null,
+        "actual_net": null,
+        "slippage_leg1": 0.0,
+        "slippage_leg2": 0.0,
+        "fee_variance": -0.6133673901767063,
+        "partial_fill_loss": 0.308096174615695,
+        "rollback_loss": 0.0,
+        "primary_loss_category": "partial_fill"
+      },
+      "what_if": {
+        "optimal_profit": -7.224671454583006,
+        "maker_fee_savings": 0.2620347159693318,
+        "timing_loss": 0.0
+      },
+      "event_count": 4,
+      "error": "Leg 1 execution failed"
+    },
+    {
+      "journal_id": "JOURNAL-3074903BF650",
+      "spread_id": "SPREAD-DE750AD3",
+      "status": "failed",
+      "detected_at": "2026-01-27T19:25:42.551930",
+      "duration_ms": 3508,
+      "input": {
+        "leg1": {
+          "exchange": "paper",
+          "ticker": "DEMO-003-YES",
+          "bid": 0.45733149367678044,
+          "ask": 0.47767485138604043,
+          "age_ms": 0.006
+        },
+        "leg2": {
+          "exchange": "paper",
+          "ticker": "DEMO-003-NO",
+          "bid": 0.573408421952718,
+          "ask": 0.6032763735923752,
+          "age_ms": 0.001
+        },
+        "expected_profit": 0.46088400372538046
+      },
+      "decision": {
+        "rank": 4,
+        "total_opportunities": 5,
+        "edge_cents": 5.120933374726455,
+        "roi_pct": 0.08688398652063545
+      },
+      "execution": {
+        "leg1_filled": false,
+        "leg1_price": null,
+        "leg1_size": 0,
+        "leg2_filled": false,
+        "leg2_price": null,
+        "leg2_size": 0
+      },
+      "pnl": {
+        "expected_gross": 0.35846533623085186,
+        "expected_net": 0.46088400372538046,
+        "actual_gross": null,
+        "actual_net": null,
+        "slippage_leg1": 0.0,
+        "slippage_leg2": 0.0,
+        "fee_variance": -0.6027035819859152,
+        "partial_fill_loss": 0.46088400372538046,
+        "rollback_loss": 0.0,
+        "primary_loss_category": "partial_fill"
+      },
+      "what_if": {
+        "optimal_profit": 9.238289559684386,
+        "maker_fee_savings": 0,
+        "timing_loss": 0.0
+      },
+      "event_count": 4,
+      "error": "Leg 1 execution failed"
+    },
+    {
+      "journal_id": "JOURNAL-FE4A2C5B172D",
+      "spread_id": "SPREAD-9716443F",
+      "status": "failed",
+      "detected_at": "2026-01-27T19:25:46.060958",
+      "duration_ms": 3509,
+      "input": {
+        "leg1": {
+          "exchange": "paper",
+          "ticker": "DEMO-004-YES",
+          "bid": 0.45685524683305645,
+          "ask": 0.4700080038834731,
+          "age_ms": 0.005
+        },
+        "leg2": {
+          "exchange": "paper",
+          "ticker": "DEMO-004-NO",
+          "bid": 0.3753490243965343,
+          "ask": 0.395776072641397,
+          "age_ms": 0.001
+        },
+        "expected_profit": 0.44059725310793824
+      },
+      "decision": {
+        "rank": 5,
+        "total_opportunities": 5,
+        "edge_cents": 4.89552503453265,
+        "roi_pct": 0.16308105455862124
+      },
+      "execution": {
+        "leg1_filled": false,
+        "leg1_price": null,
+        "leg1_size": 0,
+        "leg2_filled": false,
+        "leg2_price": null,
+        "leg2_size": 0
+      },
+      "pnl": {
+        "expected_gross": 0.34268675241728547,
+        "expected_net": 0.44059725310793824,
+        "actual_gross": null,
+        "actual_net": null,
+        "slippage_leg1": 0.0,
+        "slippage_leg2": 0.0,
+        "fee_variance": -0.40222707536672153,
+        "partial_fill_loss": 0.44059725310793824,
+        "rollback_loss": 0.0,
+        "primary_loss_category": "partial_fill"
+      },
+      "what_if": {
+        "optimal_profit": -9.134591520489593,
+        "maker_fee_savings": 0.3313064282042858,
+        "timing_loss": 0.0
+      },
+      "event_count": 4,
+      "error": "Leg 1 execution failed"
+    }
+  ]
+}

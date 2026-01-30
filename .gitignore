@@ -1,0 +1,15 @@
+apis/keys/key.py
+apis/keys/key.txt
+apis/keys/*
+*.pyc
+data/*.db
+config.yaml
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov
+*.err
+*.log
+*.pkl.env
+.env

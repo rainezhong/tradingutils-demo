@@ -1,0 +1,23 @@
+{
+  "session_name": "LAL_vs_CHI_20260126_1711",
+  "duration_minutes": 37.9601465622584,
+  "initial_capital": 10000,
+  "final_equity": 10000.0,
+  "total_return": 0.0,
+  "total_pnl": 0.0,
+  "total_trades": 2,
+  "winning_trades": 0,
+  "losing_trades": 2,
+  "win_rate": 0.0,
+  "gross_profit": 0,
+  "gross_loss": 0.0,
+  "avg_win": 0,
+  "avg_loss": 0.0,
+  "avg_pnl_per_trade": 0.0,
+  "profit_factor": Infinity,
+  "sharpe_ratio": 0.0,
+  "max_drawdown": 0,
+  "is_profitable": false,
+  "beats_breakeven": false,
+  "profitability": "UNPROFITABLE \u274c"
+}

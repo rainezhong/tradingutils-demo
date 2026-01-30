@@ -1,0 +1,156 @@
+{
+  "journal_id": "JOURNAL-1DFCC9FA7A81",
+  "spread_id": "DEMO-SPREAD-0028",
+  "session_id": "demo_20260127_195521",
+  "detected_at": "2026-01-27T19:55:21.939578",
+  "execution_started_at": "2026-01-27T19:55:21.939578",
+  "execution_completed_at": "2026-01-27T19:55:21.939589",
+  "total_duration_ms": 0,
+  "input_snapshot": {
+    "leg1_quote": {
+      "exchange": "demo_exchange_a",
+      "ticker": "DEMO-028-YES",
+      "bid": 0.6491346532928602,
+      "ask": 0.6691346532928603,
+      "mid": 0.6591346532928603,
+      "spread": 0.02,
+      "bid_size": 100,
+      "ask_size": 30,
+      "timestamp": "2026-01-27T19:55:21.939568",
+      "age_ms": 127.03019452222402
+    },
+    "leg2_quote": {
+      "exchange": "demo_exchange_b",
+      "ticker": "DEMO-028-YES",
+      "bid": 0.7590851289287768,
+      "ask": 0.7790851289287768,
+      "mid": 0.7690851289287768,
+      "spread": 0.02,
+      "bid_size": 30,
+      "ask_size": 100,
+      "timestamp": "2026-01-27T19:55:21.939568",
+      "age_ms": 453.4762929812444
+    },
+    "expected_gross_spread": 1.7990095127183312,
+    "expected_net_spread": 1.5471481809377647,
+    "expected_fees": 0.2518613317805664,
+    "capital_available": 10000.0,
+    "active_positions": 28,
+    "active_spreads": 1,
+    "system_load": null
+  },
+  "decision_record": {
+    "opportunity_rank": 1,
+    "total_opportunities": 3,
+    "edge_cents": 8.995047563591656,
+    "roi_pct": 0.11560813457531575,
+    "liquidity_score": 0.8065810318139643,
+    "filters_passed": [
+      "min_edge",
+      "min_roi",
+      "min_liquidity"
+    ],
+    "filters_failed": [],
+    "decision_reason": "Demo trade 29",
+    "alternative_opportunities": []
+  },
+  "execution_events": [
+    {
+      "event_type": "detection",
+      "timestamp": "2026-01-27T19:55:21.939580",
+      "elapsed_ms": 0.002,
+      "details": {
+        "opportunity_rank": 1
+      }
+    },
+    {
+      "event_type": "decision",
+      "timestamp": "2026-01-27T19:55:21.939581",
+      "elapsed_ms": 0.003,
+      "details": {}
+    },
+    {
+      "event_type": "leg1_submitted",
+      "timestamp": "2026-01-27T19:55:21.939583",
+      "elapsed_ms": 0.005,
+      "details": {}
+    },
+    {
+      "event_type": "leg1_filled",
+      "timestamp": "2026-01-27T19:55:21.939585",
+      "elapsed_ms": 0.007,
+      "details": {
+        "price": 0.6813896607454057,
+        "size": 15
+      }
+    },
+    {
+      "event_type": "leg2_submitted",
+      "timestamp": "2026-01-27T19:55:21.939586",
+      "elapsed_ms": 0.008,
+      "details": {}
+    },
+    {
+      "event_type": "leg2_partial",
+      "timestamp": "2026-01-27T19:55:21.939587",
+      "elapsed_ms": 0.009000000000000001,
+      "details": {
+        "price": 0.7469867878095109,
+        "size": 15
+      }
+    },
+    {
+      "event_type": "completed",
+      "timestamp": "2026-01-27T19:55:21.939590",
+      "elapsed_ms": 0.012,
+      "details": {
+        "status": "partial"
+      }
+    }
+  ],
+  "pnl_breakdown": {
+    "expected_gross_profit": 1.7990095127183312,
+    "expected_net_profit": 1.5471481809377647,
+    "expected_total_fees": 0.2518613317805664,
+    "leg1_expected_price": 0.6691346532928603,
+    "leg1_actual_price": 0.6813896607454057,
+    "leg1_expected_size": 30,
+    "leg1_actual_size": 15,
+    "leg1_slippage_cost": 0.18382511178818228,
+    "leg2_expected_price": 0.7590851289287768,
+    "leg2_actual_price": 0.7469867878095109,
+    "leg2_expected_size": 30,
+    "leg2_actual_size": 15,
+    "leg2_slippage_cost": 0.1814751167889883,
+    "expected_leg1_fee": 0.1259306658902832,
+    "actual_leg1_fee": 0.715459143782676,
+    "expected_leg2_fee": 0.1259306658902832,
+    "actual_leg2_fee": 0.7843361271999865,
+    "fee_variance": 1.247933939202096,
+    "partial_fill_loss": 0.7735740904688824,
+    "rollback_loss": 0.0,
+    "actual_gross_profit": 0.9839569059615771,
+    "actual_net_profit": -0.5158383650210854,
+    "primary_loss_category": "fees_exceeded",
+    "loss_categories": [
+      "slippage_leg1",
+      "slippage_leg2",
+      "fees_exceeded",
+      "partial_fill"
+    ],
+    "total_loss_amount": 2.3868082582481494
+  },
+  "what_if_analysis": {
+    "optimal_profit": 2.6040662696597834,
+    "optimal_leg1_price": 0.6691346532928603,
+    "optimal_leg2_price": 0.7590851289287768,
+    "maker_fee_savings": 1.4053472715649502,
+    "timing_loss": 0.0,
+    "size_optimization_potential": 0.7735740904688824,
+    "would_profit_at_detection_prices": true,
+    "profit_at_detection_prices": 1.5471481809377647
+  },
+  "status": "partial",
+  "error_message": null,
+  "metadata": {}
+}

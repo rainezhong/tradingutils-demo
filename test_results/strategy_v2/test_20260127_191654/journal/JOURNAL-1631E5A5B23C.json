@@ -1,0 +1,134 @@
+{
+  "journal_id": "JOURNAL-1631E5A5B23C",
+  "spread_id": "SPREAD-BC2EE4B1",
+  "session_id": "test_20260127_191654",
+  "detected_at": "2026-01-27T19:16:57.690203",
+  "execution_started_at": "2026-01-27T19:16:57.690203",
+  "execution_completed_at": "2026-01-27T19:17:01.206808",
+  "total_duration_ms": 3516,
+  "input_snapshot": {
+    "leg1_quote": {
+      "exchange": "paper",
+      "ticker": "ETH-5K-YES",
+      "bid": 0.38,
+      "ask": 0.4,
+      "mid": 0.39,
+      "spread": 0.020000000000000018,
+      "bid_size": 100,
+      "ask_size": 100,
+      "timestamp": "2026-01-27T19:16:54.067019",
+      "age_ms": 3623.123
+    },
+    "leg2_quote": {
+      "exchange": "paper",
+      "ticker": "ETH-5K-NO",
+      "bid": 0.58,
+      "ask": 0.6,
+      "mid": 0.59,
+      "spread": 0.020000000000000018,
+      "bid_size": 100,
+      "ask_size": 100,
+      "timestamp": "2026-01-27T19:16:54.067019",
+      "age_ms": 3623.123
+    },
+    "expected_gross_spread": 5.399999999999999,
+    "expected_net_spread": 0.9,
+    "expected_fees": 2.058,
+    "capital_available": 5000.0,
+    "active_positions": 0,
+    "active_spreads": 0,
+    "system_load": null
+  },
+  "decision_record": {
+    "opportunity_rank": 2,
+    "total_opportunities": 5,
+    "edge_cents": 17.999999999999993,
+    "roi_pct": 0.075,
+    "liquidity_score": 0.8,
+    "filters_passed": [
+      "min_edge",
+      "min_roi",
+      "min_liquidity"
+    ],
+    "filters_failed": [],
+    "decision_reason": "ETH Dutch book arb",
+    "alternative_opportunities": []
+  },
+  "execution_events": [
+    {
+      "event_type": "detection",
+      "timestamp": "2026-01-27T19:16:57.690212",
+      "elapsed_ms": 0.009000000000000001,
+      "details": {
+        "opportunity_rank": 2
+      }
+    },
+    {
+      "event_type": "decision",
+      "timestamp": "2026-01-27T19:16:57.690220",
+      "elapsed_ms": 0.017,
+      "details": {
+        "reason": "ETH Dutch book arb"
+      }
+    },
+    {
+      "event_type": "leg1_submitted",
+      "timestamp": "2026-01-27T19:16:57.690223",
+      "elapsed_ms": 0.02,
+      "details": {}
+    },
+    {
+      "event_type": "completed",
+      "timestamp": "2026-01-27T19:17:01.206826",
+      "elapsed_ms": 3516.623,
+      "details": {
+        "status": "failed"
+      }
+    }
+  ],
+  "pnl_breakdown": {
+    "expected_gross_profit": 5.399999999999999,
+    "expected_net_profit": 0.9,
+    "expected_total_fees": 2.058,
+    "leg1_expected_price": 0.4,
+    "leg1_actual_price": null,
+    "leg1_expected_size": 100,
+    "leg1_actual_size": 0,
+    "leg1_slippage_cost": 0.0,
+    "leg2_expected_price": 0.58,
+    "leg2_actual_price": null,
+    "leg2_expected_size": 100,
+    "leg2_actual_size": 0,
+    "leg2_slippage_cost": 0.0,
+    "expected_leg1_fee": 1.029,
+    "actual_leg1_fee": 0.0,
+    "expected_leg2_fee": 1.029,
+    "actual_leg2_fee": 0.0,
+    "fee_variance": -2.058,
+    "partial_fill_loss": 0.9,
+    "rollback_loss": 0.0,
+    "actual_gross_profit": null,
+    "actual_net_profit": null,
+    "primary_loss_category": "partial_fill",
+    "loss_categories": [
+      "partial_fill",
+      "timing_stale_quote"
+    ],
+    "total_loss_amount": 0.9
+  },
+  "what_if_analysis": {
+    "optimal_profit": 17.369999999999994,
+    "optimal_leg1_price": 0.4,
+    "optimal_leg2_price": 0.58,
+    "maker_fee_savings": 0,
+    "timing_loss": 7.246246000000001,
+    "size_optimization_potential": 0.9,
+    "would_profit_at_detection_prices": true,
+    "profit_at_detection_prices": 0.9
+  },
+  "status": "failed",
+  "error_message": "Leg 1 execution failed",
+  "metadata": {
+    "execution_result": "failed"
+  }
+}

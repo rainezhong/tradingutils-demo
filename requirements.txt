@@ -1,0 +1,54 @@
+# Kalshi Market Data Collector Dependencies
+
+# HTTP clients
+requests>=2.28.0
+httpx>=0.25.0
+
+# WebSocket client
+websockets>=12.0
+
+# Validation
+pydantic>=2.0.0
+
+# Scheduling
+schedule>=1.2.0
+
+# Data analysis
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Configuration
+PyYAML>=6.0
+
+# Database
+SQLAlchemy>=2.0.0
+asyncpg>=0.29.0              # PostgreSQL async driver
+alembic>=1.13.0              # Database migrations
+redis>=5.0.0                 # Redis client (async support)
+
+# Testing
+pytest>=7.0.0
+pytest-mock>=3.10.0
+pytest-asyncio>=0.23.0       # Async test support
+aiosqlite>=0.19.0            # SQLite async for tests
+
+# Market matching
+rapidfuzz>=3.0.0          # Fast fuzzy string matching
+sentence-transformers>=2.2.0  # Semantic similarity (optional, ~80MB model)
+
+# CLI
+click>=8.0.0                   # Command-line interface
+
+# Monitoring & Observability
+structlog>=24.0.0              # Structured logging
+prometheus-client>=0.19.0      # Prometheus metrics
+slack-sdk>=3.26.0              # Slack alerts
+fastapi>=0.109.0               # Health check endpoints
+uvicorn>=0.27.0                # ASGI server
+aiohttp>=3.9.0                 # Async HTTP client
+psutil>=5.9.0                  # System metrics (optional)
+
+# Type checking (optional, for development)
+# mypy>=1.0.0
+# types-requests>=2.28.0
+# types-PyYAML>=6.0.0

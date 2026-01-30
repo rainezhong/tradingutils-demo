@@ -1,0 +1,23 @@
+{
+  "session_name": "BKN_vs_PHX_20260127_1815",
+  "duration_minutes": 0.8811932841936747,
+  "initial_capital": 10000,
+  "final_equity": 9994.635,
+  "total_return": -0.05364999999999782,
+  "total_pnl": -5.365000000000005,
+  "total_trades": 3,
+  "winning_trades": 0,
+  "losing_trades": 3,
+  "win_rate": 0.0,
+  "gross_profit": 0,
+  "gross_loss": 5.365000000000005,
+  "avg_win": 0,
+  "avg_loss": 1.7883333333333349,
+  "avg_pnl_per_trade": -1.7883333333333349,
+  "profit_factor": 0.0,
+  "sharpe_ratio": -1.0000000000000004,
+  "max_drawdown": 0.05364999999999782,
+  "is_profitable": false,
+  "beats_breakeven": false,
+  "profitability": "UNPROFITABLE \u274c"
+}

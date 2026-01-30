@@ -1,0 +1,127 @@
+# Prometheus Alert Rules for Trading Arbitrage System
+# These rules trigger alerts based on trading metrics
+
+groups:
+  - name: trading_alerts
+    rules:
+      # Trading system is halted
+      - alert: TradingHalted
+        expr: trading_halted == 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Trading system is halted"
+          description: "The trading system has been halted. Manual intervention required."
+
+      # High daily loss
+      - alert: HighDailyLoss
+        expr: daily_pnl_dollars < -200
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High daily loss detected"
+          description: "Daily P&L is {{ $value | printf \"%.2f\" }} dollars"
+
+      # Critical daily loss
+      - alert: CriticalDailyLoss
+        expr: daily_pnl_dollars < -400
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical daily loss - approaching limit"
+          description: "Daily P&L is {{ $value | printf \"%.2f\" }} dollars, approaching circuit breaker threshold"
+
+      # Low fill rate
+      - alert: LowFillRate
+        expr: arbitrage_fill_rate < 0.7
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low fill rate on {{ $labels.platform }}"
+          description: "Fill rate is {{ $value | printf \"%.2f\" }} on {{ $labels.platform }}"
+
+      # High API latency
+      - alert: HighAPILatency
+        expr: histogram_quantile(0.95, rate(api_request_latency_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API latency on {{ $labels.platform }}"
+          description: "95th percentile latency is {{ $value | printf \"%.2f\" }}s on {{ $labels.platform }}"
+
+      # WebSocket disconnected
+      - alert: WebSocketDisconnected
+        expr: websocket_connected == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "WebSocket disconnected on {{ $labels.platform }}"
+          description: "WebSocket connection to {{ $labels.platform }} is down"
+
+      # High error rate
+      - alert: HighErrorRate
+        expr: rate(errors_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate in {{ $labels.component }}"
+          description: "Error rate is {{ $value | printf \"%.2f\" }}/s in {{ $labels.component }}"
+
+      # Rate limiting
+      - alert: RateLimitHits
+        expr: rate(rate_limit_hits_total[5m]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Rate limiting on {{ $labels.platform }}"
+          description: "Hitting rate limits on {{ $labels.platform }} {{ $labels.endpoint }}"
+
+      # High risk utilization
+      - alert: HighRiskUtilization
+        expr: risk_utilization_pct > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High {{ $labels.limit_type }} utilization"
+          description: "{{ $labels.limit_type }} utilization is {{ $value | printf \"%.1f\" }}%"
+
+      # No trades executed
+      - alert: NoTradesExecuted
+        expr: increase(arbitrage_trades_executed_total[1h]) == 0
+        for: 2h
+        labels:
+          severity: info
+        annotations:
+          summary: "No trades executed in past hour"
+          description: "No trades have been executed in the past hour. Check if opportunities exist."
+
+  - name: infrastructure_alerts
+    rules:
+      # Prometheus target down
+      - alert: TargetDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Target {{ $labels.instance }} is down"
+          description: "Prometheus cannot scrape {{ $labels.job }} target {{ $labels.instance }}"
+
+      # Low disk space (if node_exporter is running)
+      # - alert: LowDiskSpace
+      #   expr: node_filesystem_avail_bytes / node_filesystem_size_bytes < 0.1
+      #   for: 5m
+      #   labels:
+      #     severity: warning
+      #   annotations:
+      #     summary: "Low disk space on {{ $labels.instance }}"
+      #     description: "Disk space is below 10%"

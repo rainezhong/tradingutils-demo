@@ -1,0 +1,950 @@
+/* Trading Dashboard Styles */
+
+:root {
+    --bg-primary: #1a1a2e;
+    --bg-secondary: #16213e;
+    --bg-card: #0f3460;
+    --text-primary: #eaeaea;
+    --text-secondary: #a0a0a0;
+    --accent: #e94560;
+    --success: #00d26a;
+    --warning: #ffc107;
+    --danger: #dc3545;
+    --border: #2a3a5e;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+}
+
+header {
+    background: var(--bg-secondary);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+}
+
+header h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.status-bar {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.status-connected {
+    color: var(--success);
+}
+
+.status-connected::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: var(--success);
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.status-disconnected {
+    color: var(--danger);
+}
+
+.status-disconnected::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: var(--danger);
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.panel-toggles {
+    display: flex;
+    gap: 1rem;
+    margin-right: 1rem;
+}
+
+.panel-toggles label {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.panel-toggles input[type="checkbox"] {
+    cursor: pointer;
+}
+
+#demo-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+#demo-btn:hover {
+    opacity: 0.9;
+}
+
+.panel-hidden {
+    display: none !important;
+}
+
+main {
+    padding: 1.5rem;
+}
+
+/* Metrics Panel */
+.metrics-panel {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.metric-card {
+    background: var(--bg-card);
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+    border: 1px solid var(--border);
+}
+
+.metric-card.profit .metric-value {
+    color: var(--success);
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.metric-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+/* Dashboard Grid */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+
+@media (max-width: 1200px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.panel {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+}
+
+.panel h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Tables */
+.table-container {
+    overflow-x: auto;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+thead {
+    position: sticky;
+    top: 0;
+    background: var(--bg-secondary);
+}
+
+th, td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+tbody tr:hover {
+    background: var(--bg-card);
+}
+
+.empty-row td {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 2rem;
+}
+
+/* Status badges */
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.status-pending {
+    background: var(--warning);
+    color: #000;
+}
+
+.status-completed {
+    background: var(--success);
+    color: #fff;
+}
+
+.status-failed {
+    background: var(--danger);
+    color: #fff;
+}
+
+/* Market Maker Panel */
+.mm-state {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.mm-item {
+    background: var(--bg-card);
+    padding: 1rem;
+    border-radius: 6px;
+}
+
+.mm-item-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.mm-item-value {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.mm-position-positive {
+    color: var(--success);
+}
+
+.mm-position-negative {
+    color: var(--danger);
+}
+
+/* NBA Panel */
+.nba-game {
+    background: var(--bg-card);
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+}
+
+.nba-game:last-child {
+    margin-bottom: 0;
+}
+
+.nba-score {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.nba-team {
+    text-align: center;
+    width: 80px;
+}
+
+.nba-vs {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.nba-info {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.nba-info-item {
+    text-align: center;
+}
+
+.nba-info-label {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 2rem;
+}
+
+/* Charts */
+.chart-panel {
+    height: 300px;
+}
+
+.chart-panel canvas {
+    max-height: 250px;
+}
+
+/* Edge indicator */
+.edge-positive {
+    color: var(--success);
+}
+
+.edge-negative {
+    color: var(--danger);
+}
+
+/* Platform badges */
+.platform-kalshi {
+    color: #00b4d8;
+}
+
+.platform-polymarket {
+    color: #9b59b6;
+}
+
+/* Activity Log */
+.activity-panel {
+    margin-top: 1.5rem;
+}
+
+.activity-panel h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+#activity-count {
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+}
+
+.activity-log {
+    max-height: 300px;
+    overflow-y: auto;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+    font-size: 0.8rem;
+    line-height: 1.6;
+}
+
+.activity-entry {
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 100px 60px 1fr;
+    gap: 1rem;
+    align-items: start;
+}
+
+.activity-entry:hover {
+    background: var(--bg-card);
+}
+
+.activity-time {
+    color: var(--text-secondary);
+}
+
+.activity-type {
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+}
+
+.activity-type-signal {
+    background: var(--accent);
+    color: white;
+}
+
+.activity-type-order {
+    background: #3498db;
+    color: white;
+}
+
+.activity-type-fill {
+    background: var(--success);
+    color: white;
+}
+
+.activity-type-decision {
+    background: #9b59b6;
+    color: white;
+}
+
+.activity-type-error {
+    background: var(--danger);
+    color: white;
+}
+
+.activity-message {
+    color: var(--text-primary);
+}
+
+.activity-details {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+/* Enhanced NBA Panel */
+.nba-game {
+    background: var(--bg-card);
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    border-left: 4px solid var(--border);
+}
+
+.nba-game.has-edge {
+    border-left-color: var(--success);
+}
+
+.nba-game.no-edge {
+    border-left-color: var(--text-secondary);
+}
+
+.nba-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.nba-matchup {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.nba-period {
+    background: var(--bg-secondary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+.nba-score-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5rem;
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 1rem 0;
+}
+
+.nba-team-score {
+    text-align: center;
+    min-width: 80px;
+}
+
+.nba-team-code {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.nba-vs {
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+
+.nba-analysis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+
+.nba-stat {
+    text-align: center;
+}
+
+.nba-stat-label {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+}
+
+.nba-stat-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.nba-stat-value.positive {
+    color: var(--success);
+}
+
+.nba-stat-value.negative {
+    color: var(--danger);
+}
+
+.nba-signal {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    text-align: center;
+}
+
+.nba-signal-none {
+    color: var(--text-secondary);
+}
+
+.nba-signal-buy {
+    color: var(--success);
+    font-weight: 600;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+/* ==================== Backtest Panel ==================== */
+
+.backtest-panel {
+    grid-column: span 2;
+}
+
+@media (max-width: 1200px) {
+    .backtest-panel {
+        grid-column: span 1;
+    }
+}
+
+.backtest-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Configuration Form */
+.backtest-config {
+    background: var(--bg-card);
+    padding: 1.25rem;
+    border-radius: 6px;
+}
+
+.config-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.config-row:last-child {
+    margin-bottom: 0;
+}
+
+.config-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.config-field label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.config-field select,
+.config-field input {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 0.5rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.config-field select:focus,
+.config-field input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.config-field.blowout-info {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+}
+
+.config-field .info-text {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    background: rgba(0, 210, 106, 0.1);
+    border-left: 3px solid var(--success);
+    padding: 0.75rem 1rem;
+    border-radius: 0 4px 4px 0;
+    line-height: 1.4;
+}
+
+.config-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: opacity 0.2s;
+}
+
+.btn-primary:hover {
+    opacity: 0.9;
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-cancel {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    padding: 0.35rem 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+}
+
+.btn-cancel:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+/* Progress Section */
+.backtest-progress {
+    background: var(--bg-card);
+    padding: 1.25rem;
+    border-radius: 6px;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.progress-header span {
+    font-weight: 500;
+}
+
+.progress-bar-container {
+    height: 8px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--success));
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.progress-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.progress-stat {
+    text-align: center;
+}
+
+.progress-stat .stat-label {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.progress-stat .stat-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.progress-chart {
+    height: 150px;
+    margin-top: 1rem;
+}
+
+.progress-chart canvas {
+    max-height: 150px;
+}
+
+/* Results Panel */
+.backtest-results-panel {
+    grid-column: span 2;
+}
+
+@media (max-width: 1200px) {
+    .backtest-results-panel {
+        grid-column: span 1;
+    }
+}
+
+.backtest-results-panel h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.results-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.results-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+}
+
+.result-metric {
+    background: var(--bg-card);
+    padding: 1rem;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.result-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.result-value.positive {
+    color: var(--success);
+}
+
+.result-value.negative {
+    color: var(--danger);
+}
+
+.result-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+.results-details {
+    background: var(--bg-card);
+    padding: 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+}
+
+.results-details .detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.results-details .detail-row:last-child {
+    border-bottom: none;
+}
+
+.results-details .detail-label {
+    color: var(--text-secondary);
+}
+
+.results-chart {
+    background: var(--bg-card);
+    padding: 1rem;
+    border-radius: 6px;
+}
+
+.results-chart h3 {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.results-chart canvas {
+    max-height: 200px;
+}
+
+.results-trades {
+    background: var(--bg-card);
+    padding: 1rem;
+    border-radius: 6px;
+}
+
+.results-trades h3 {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.results-trades #bt-trade-count {
+    font-size: 0.75rem;
+    font-weight: 400;
+}
+
+/* Status badges for backtest */
+.status-running {
+    background: var(--warning);
+    color: #000;
+}
+
+.status-cancelled {
+    background: var(--text-secondary);
+    color: #fff;
+}
+
+/* Trade result cells */
+.trade-win {
+    color: var(--success);
+}
+
+.trade-loss {
+    color: var(--danger);
+}
+
+.trade-pending {
+    color: var(--text-secondary);
+}
+
+/* Price Chart */
+.price-chart-container {
+    min-height: 280px;
+}
+
+.price-chart-container canvas {
+    max-height: 220px;
+}
+
+.chart-legend {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.75rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--text-secondary);
+}
+
+.legend-color {
+    display: inline-block;
+    width: 20px;
+    height: 3px;
+    border-radius: 2px;
+}
+
+.legend-color.price-line {
+    background: #3498db;
+}
+
+.legend-marker {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.legend-marker.buy-marker {
+    background: var(--success);
+}
+
+.legend-marker.sell-marker {
+    background: var(--danger);
+}

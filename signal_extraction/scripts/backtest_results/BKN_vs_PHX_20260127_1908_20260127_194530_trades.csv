@@ -1,0 +1,2 @@
+trade_id,timestamp,ticker,side,quantity,entry_price,exit_price,exit_timestamp,pnl,pnl_pct,fair_value,mispricing,signal_strength,orderbook_imbalance,score_differential,win_probability
+1,1769571564.4625502,KXNBAGAME-26JAN27BKNPHX-PHX,buy,946,0.845,0.855,1769571593.5878265,9.460000000000008,1.1834319526627228,0.8304148628140238,-0.014585137185976205,0.005959724594254381,0.0,5,0.9499046533048378

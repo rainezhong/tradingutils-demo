@@ -1,0 +1,143 @@
+{
+  "journal_id": "JOURNAL-8A69C948570B",
+  "spread_id": "DEMO-SPREAD-0005",
+  "session_id": "demo_20260127_195521",
+  "detected_at": "2026-01-27T19:55:21.932298",
+  "execution_started_at": "2026-01-27T19:55:21.932298",
+  "execution_completed_at": "2026-01-27T19:55:21.932307",
+  "total_duration_ms": 0,
+  "input_snapshot": {
+    "leg1_quote": {
+      "exchange": "demo_exchange_a",
+      "ticker": "DEMO-005-YES",
+      "bid": 0.517454616629543,
+      "ask": 0.537454616629543,
+      "mid": 0.527454616629543,
+      "spread": 0.02,
+      "bid_size": 100,
+      "ask_size": 30,
+      "timestamp": "2026-01-27T19:55:21.932286",
+      "age_ms": 445.0855361537298
+    },
+    "leg2_quote": {
+      "exchange": "demo_exchange_b",
+      "ticker": "DEMO-005-YES",
+      "bid": 0.6280117263339454,
+      "ask": 0.6480117263339454,
+      "mid": 0.6380117263339454,
+      "spread": 0.02,
+      "bid_size": 30,
+      "ask_size": 100,
+      "timestamp": "2026-01-27T19:55:21.932286",
+      "age_ms": 468.3093877590972
+    },
+    "expected_gross_spread": 1.8111421940880494,
+    "expected_net_spread": 1.5575822869157225,
+    "expected_fees": 0.25355990717232696,
+    "capital_available": 10000.0,
+    "active_positions": 5,
+    "active_spreads": 1,
+    "system_load": null
+  },
+  "decision_record": {
+    "opportunity_rank": 1,
+    "total_opportunities": 5,
+    "edge_cents": 9.055710970440249,
+    "roi_pct": 0.14490361034421384,
+    "liquidity_score": 0.8133899250388958,
+    "filters_passed": [
+      "min_edge",
+      "min_roi",
+      "min_liquidity"
+    ],
+    "filters_failed": [],
+    "decision_reason": "Demo trade 6",
+    "alternative_opportunities": []
+  },
+  "execution_events": [
+    {
+      "event_type": "detection",
+      "timestamp": "2026-01-27T19:55:21.932299",
+      "elapsed_ms": 0.001,
+      "details": {
+        "opportunity_rank": 1
+      }
+    },
+    {
+      "event_type": "decision",
+      "timestamp": "2026-01-27T19:55:21.932301",
+      "elapsed_ms": 0.003,
+      "details": {}
+    },
+    {
+      "event_type": "leg1_submitted",
+      "timestamp": "2026-01-27T19:55:21.932302",
+      "elapsed_ms": 0.004,
+      "details": {}
+    },
+    {
+      "event_type": "leg1_timeout",
+      "timestamp": "2026-01-27T19:55:21.932304",
+      "elapsed_ms": 0.006,
+      "details": {}
+    },
+    {
+      "event_type": "error",
+      "timestamp": "2026-01-27T19:55:21.932306",
+      "elapsed_ms": 0.008,
+      "details": {
+        "message": "Order rejected"
+      }
+    },
+    {
+      "event_type": "completed",
+      "timestamp": "2026-01-27T19:55:21.932308",
+      "elapsed_ms": 0.01,
+      "details": {
+        "status": "failed"
+      }
+    }
+  ],
+  "pnl_breakdown": {
+    "expected_gross_profit": 1.8111421940880494,
+    "expected_net_profit": 1.5575822869157225,
+    "expected_total_fees": 0.25355990717232696,
+    "leg1_expected_price": 0.537454616629543,
+    "leg1_actual_price": null,
+    "leg1_expected_size": 30,
+    "leg1_actual_size": 0,
+    "leg1_slippage_cost": 0.0,
+    "leg2_expected_price": 0.6280117263339454,
+    "leg2_actual_price": null,
+    "leg2_expected_size": 30,
+    "leg2_actual_size": 0,
+    "leg2_slippage_cost": 0.0,
+    "expected_leg1_fee": 0.12677995358616348,
+    "actual_leg1_fee": 0,
+    "expected_leg2_fee": 0.12677995358616348,
+    "actual_leg2_fee": 0,
+    "fee_variance": -0.25355990717232696,
+    "partial_fill_loss": 1.5575822869157225,
+    "rollback_loss": 0.0,
+    "actual_gross_profit": null,
+    "actual_net_profit": null,
+    "primary_loss_category": "partial_fill",
+    "loss_categories": [
+      "partial_fill"
+    ],
+    "total_loss_amount": 1.5575822869157225
+  },
+  "what_if_analysis": {
+    "optimal_profit": 2.621628325942451,
+    "optimal_leg1_price": 0.537454616629543,
+    "optimal_leg2_price": 0.6280117263339454,
+    "maker_fee_savings": 0,
+    "timing_loss": 0.0,
+    "size_optimization_potential": 1.5575822869157225,
+    "would_profit_at_detection_prices": true,
+    "profit_at_detection_prices": 1.5575822869157225
+  },
+  "status": "failed",
+  "error_message": "Order rejected by exchange",
+  "metadata": {}
+}

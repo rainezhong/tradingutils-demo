@@ -1,0 +1,133 @@
+{
+  "journal_id": "JOURNAL-40781FA849B5",
+  "spread_id": "SPREAD-B842D76A",
+  "session_id": "test_20260127_192532",
+  "detected_at": "2026-01-27T19:25:32.014345",
+  "execution_started_at": "2026-01-27T19:25:32.014345",
+  "execution_completed_at": "2026-01-27T19:25:35.522472",
+  "total_duration_ms": 3508,
+  "input_snapshot": {
+    "leg1_quote": {
+      "exchange": "paper",
+      "ticker": "DEMO-000-YES",
+      "bid": 0.4873256502674187,
+      "ask": 0.5076357321534709,
+      "mid": 0.4974806912104448,
+      "spread": 0.02031008188605219,
+      "bid_size": 100,
+      "ask_size": 100,
+      "timestamp": "2026-01-27T19:25:32.014322",
+      "age_ms": 0.005
+    },
+    "leg2_quote": {
+      "exchange": "paper",
+      "ticker": "DEMO-000-NO",
+      "bid": 0.4176866850951134,
+      "ask": 0.43770817166687676,
+      "mid": 0.4276974283809951,
+      "spread": 0.020021486571763336,
+      "bid_size": 100,
+      "ask_size": 100,
+      "timestamp": "2026-01-27T19:25:32.014326",
+      "age_ms": 0.001
+    },
+    "expected_gross_spread": 0.29819399694890514,
+    "expected_net_spread": 0.3354682465675182,
+    "expected_fees": 0.6426825619494616,
+    "capital_available": 10000.0,
+    "active_positions": 0,
+    "active_spreads": 0,
+    "system_load": null
+  },
+  "decision_record": {
+    "opportunity_rank": 1,
+    "total_opportunities": 5,
+    "edge_cents": 3.7274249618613142,
+    "roi_pct": 0.07553051799939775,
+    "liquidity_score": 0.8,
+    "filters_passed": [
+      "min_edge",
+      "min_roi",
+      "min_liquidity"
+    ],
+    "filters_failed": [],
+    "decision_reason": "Demo opportunity 1",
+    "alternative_opportunities": []
+  },
+  "execution_events": [
+    {
+      "event_type": "detection",
+      "timestamp": "2026-01-27T19:25:32.014349",
+      "elapsed_ms": 0.004,
+      "details": {
+        "opportunity_rank": 1
+      }
+    },
+    {
+      "event_type": "decision",
+      "timestamp": "2026-01-27T19:25:32.014354",
+      "elapsed_ms": 0.009000000000000001,
+      "details": {
+        "reason": "Demo opportunity 1"
+      }
+    },
+    {
+      "event_type": "leg1_submitted",
+      "timestamp": "2026-01-27T19:25:32.014355",
+      "elapsed_ms": 0.01,
+      "details": {}
+    },
+    {
+      "event_type": "completed",
+      "timestamp": "2026-01-27T19:25:35.522474",
+      "elapsed_ms": 3508.129,
+      "details": {
+        "status": "failed"
+      }
+    }
+  ],
+  "pnl_breakdown": {
+    "expected_gross_profit": 0.29819399694890514,
+    "expected_net_profit": 0.3354682465675182,
+    "expected_total_fees": 0.6426825619494616,
+    "leg1_expected_price": 0.5076357321534709,
+    "leg1_actual_price": null,
+    "leg1_expected_size": 100,
+    "leg1_actual_size": 0,
+    "leg1_slippage_cost": 0.0,
+    "leg2_expected_price": 0.4176866850951134,
+    "leg2_actual_price": null,
+    "leg2_expected_size": 100,
+    "leg2_actual_size": 0,
+    "leg2_slippage_cost": 0.0,
+    "expected_leg1_fee": 0.3213412809747308,
+    "actual_leg1_fee": 0.0,
+    "expected_leg2_fee": 0.3213412809747308,
+    "actual_leg2_fee": 0.0,
+    "fee_variance": -0.6426825619494616,
+    "partial_fill_loss": 0.3354682465675182,
+    "rollback_loss": 0.0,
+    "actual_gross_profit": null,
+    "actual_net_profit": null,
+    "primary_loss_category": "partial_fill",
+    "loss_categories": [
+      "partial_fill"
+    ],
+    "total_loss_amount": 0.3354682465675182
+  },
+  "what_if_analysis": {
+    "optimal_profit": -8.680083041131498,
+    "optimal_leg1_price": 0.5076357321534709,
+    "optimal_leg2_price": 0.4176866850951134,
+    "maker_fee_savings": 0.31482166470425127,
+    "timing_loss": 0.0,
+    "size_optimization_potential": 0.3354682465675182,
+    "would_profit_at_detection_prices": true,
+    "profit_at_detection_prices": 0.3354682465675182
+  },
+  "status": "failed",
+  "error_message": "Leg 1 execution failed",
+  "metadata": {
+    "execution_result": "failed"
+  }
+}

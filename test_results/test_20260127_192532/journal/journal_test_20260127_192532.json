@@ -1,0 +1,672 @@
+{
+  "session_id": "test_20260127_192532",
+  "saved_at": "2026-01-27T19:25:49.572506",
+  "entry_count": 5,
+  "entries": [
+    {
+      "journal_id": "JOURNAL-40781FA849B5",
+      "spread_id": "SPREAD-B842D76A",
+      "session_id": "test_20260127_192532",
+      "detected_at": "2026-01-27T19:25:32.014345",
+      "execution_started_at": "2026-01-27T19:25:32.014345",
+      "execution_completed_at": "2026-01-27T19:25:35.522472",
+      "total_duration_ms": 3508,
+      "input_snapshot": {
+        "leg1_quote": {
+          "exchange": "paper",
+          "ticker": "DEMO-000-YES",
+          "bid": 0.4873256502674187,
+          "ask": 0.5076357321534709,
+          "mid": 0.4974806912104448,
+          "spread": 0.02031008188605219,
+          "bid_size": 100,
+          "ask_size": 100,
+          "timestamp": "2026-01-27T19:25:32.014322",
+          "age_ms": 0.005
+        },
+        "leg2_quote": {
+          "exchange": "paper",
+          "ticker": "DEMO-000-NO",
+          "bid": 0.4176866850951134,
+          "ask": 0.43770817166687676,
+          "mid": 0.4276974283809951,
+          "spread": 0.020021486571763336,
+          "bid_size": 100,
+          "ask_size": 100,
+          "timestamp": "2026-01-27T19:25:32.014326",
+          "age_ms": 0.001
+        },
+        "expected_gross_spread": 0.29819399694890514,
+        "expected_net_spread": 0.3354682465675182,
+        "expected_fees": 0.6426825619494616,
+        "capital_available": 10000.0,
+        "active_positions": 0,
+        "active_spreads": 0,
+        "system_load": null
+      },
+      "decision_record": {
+        "opportunity_rank": 1,
+        "total_opportunities": 5,
+        "edge_cents": 3.7274249618613142,
+        "roi_pct": 0.07553051799939775,
+        "liquidity_score": 0.8,
+        "filters_passed": [
+          "min_edge",
+          "min_roi",
+          "min_liquidity"
+        ],
+        "filters_failed": [],
+        "decision_reason": "Demo opportunity 1",
+        "alternative_opportunities": []
+      },
+      "execution_events": [
+        {
+          "event_type": "detection",
+          "timestamp": "2026-01-27T19:25:32.014349",
+          "elapsed_ms": 0.004,
+          "details": {
+            "opportunity_rank": 1
+          }
+        },
+        {
+          "event_type": "decision",
+          "timestamp": "2026-01-27T19:25:32.014354",
+          "elapsed_ms": 0.009000000000000001,
+          "details": {
+            "reason": "Demo opportunity 1"
+          }
+        },
+        {
+          "event_type": "leg1_submitted",
+          "timestamp": "2026-01-27T19:25:32.014355",
+          "elapsed_ms": 0.01,
+          "details": {}
+        },
+        {
+          "event_type": "completed",
+          "timestamp": "2026-01-27T19:25:35.522474",
+          "elapsed_ms": 3508.129,
+          "details": {
+            "status": "failed"
+          }
+        }
+      ],
+      "pnl_breakdown": {
+        "expected_gross_profit": 0.29819399694890514,
+        "expected_net_profit": 0.3354682465675182,
+        "expected_total_fees": 0.6426825619494616,
+        "leg1_expected_price": 0.5076357321534709,
+        "leg1_actual_price": null,
+        "leg1_expected_size": 100,
+        "leg1_actual_size": 0,
+        "leg1_slippage_cost": 0.0,
+        "leg2_expected_price": 0.4176866850951134,
+        "leg2_actual_price": null,
+        "leg2_expected_size": 100,
+        "leg2_actual_size": 0,
+        "leg2_slippage_cost": 0.0,
+        "expected_leg1_fee": 0.3213412809747308,
+        "actual_leg1_fee": 0.0,
+        "expected_leg2_fee": 0.3213412809747308,
+        "actual_leg2_fee": 0.0,
+        "fee_variance": -0.6426825619494616,
+        "partial_fill_loss": 0.3354682465675182,
+        "rollback_loss": 0.0,
+        "actual_gross_profit": null,
+        "actual_net_profit": null,
+        "primary_loss_category": "partial_fill",
+        "loss_categories": [
+          "partial_fill"
+        ],
+        "total_loss_amount": 0.3354682465675182
+      },
+      "what_if_analysis": {
+        "optimal_profit": -8.680083041131498,
+        "optimal_leg1_price": 0.5076357321534709,
+        "optimal_leg2_price": 0.4176866850951134,
+        "maker_fee_savings": 0.31482166470425127,
+        "timing_loss": 0.0,
+        "size_optimization_potential": 0.3354682465675182,
+        "would_profit_at_detection_prices": true,
+        "profit_at_detection_prices": 0.3354682465675182
+      },
+      "status": "failed",
+      "error_message": "Leg 1 execution failed",
+      "metadata": {
+        "execution_result": "failed"
+      }
+    },
+    {
+      "journal_id": "JOURNAL-78002ED7FBB1",
+      "spread_id": "SPREAD-1C2AD076",
+      "session_id": "test_20260127_192532",
+      "detected_at": "2026-01-27T19:25:35.522907",
+      "execution_started_at": "2026-01-27T19:25:35.522907",
+      "execution_completed_at": "2026-01-27T19:25:39.038457",
+      "total_duration_ms": 3515,
+      "input_snapshot": {
+        "leg1_quote": {
+          "exchange": "paper",
+          "ticker": "DEMO-001-YES",
+          "bid": 0.39020750549425315,
+          "ask": 0.41810781107355477,
+          "mid": 0.404157658283904,
+          "spread": 0.02790030557930165,
+          "bid_size": 100,
+          "ask_size": 100,
+          "timestamp": "2026-01-27T19:25:35.522888",
+          "age_ms": 0.005
+        },
+        "leg2_quote": {
+          "exchange": "paper",
+          "ticker": "DEMO-001-NO",
+          "bid": 0.42222248139456653,
+          "ask": 0.43306217131748614,
+          "mid": 0.42764232635602634,
+          "spread": 0.01083968992291962,
+          "bid_size": 100,
+          "ask_size": 100,
+          "timestamp": "2026-01-27T19:25:35.522892",
+          "age_ms": 0.001
+        },
+        "expected_gross_spread": 0.8306777369217369,
+        "expected_net_spread": 0.6230083026913027,
+        "expected_fees": 0.8843473916896099,
+        "capital_available": 10000.0,
+        "active_positions": 0,
+        "active_spreads": 0,
+        "system_load": null
+      },
+      "decision_record": {
+        "opportunity_rank": 2,
+        "total_opportunities": 5,
+        "edge_cents": 6.922314474347807,
+        "roi_pct": 0.06334144345979806,
+        "liquidity_score": 0.8,
+        "filters_passed": [
+          "min_edge",
+          "min_roi",
+          "min_liquidity"
+        ],
+        "filters_failed": [],
+        "decision_reason": "Demo opportunity 2",
+        "alternative_opportunities": []
+      },
+      "execution_events": [
+        {
+          "event_type": "detection",
+          "timestamp": "2026-01-27T19:25:35.522909",
+          "elapsed_ms": 0.002,
+          "details": {
+            "opportunity_rank": 2
+          }
+        },
+        {
+          "event_type": "decision",
+          "timestamp": "2026-01-27T19:25:35.522912",
+          "elapsed_ms": 0.005,
+          "details": {
+            "reason": "Demo opportunity 2"
+          }
+        },
+        {
+          "event_type": "leg1_submitted",
+          "timestamp": "2026-01-27T19:25:35.522913",
+          "elapsed_ms": 0.006,
+          "details": {}
+        },
+        {
+          "event_type": "completed",
+          "timestamp": "2026-01-27T19:25:39.038459",
+          "elapsed_ms": 3515.552,
+          "details": {
+            "status": "failed"
+          }
+        }
+      ],
+      "pnl_breakdown": {
+        "expected_gross_profit": 0.8306777369217369,
+        "expected_net_profit": 0.6230083026913027,
+        "expected_total_fees": 0.8843473916896099,
+        "leg1_expected_price": 0.41810781107355477,
+        "leg1_actual_price": null,
+        "leg1_expected_size": 100,
+        "leg1_actual_size": 0,
+        "leg1_slippage_cost": 0.0,
+        "leg2_expected_price": 0.42222248139456653,
+        "leg2_actual_price": null,
+        "leg2_expected_size": 100,
+        "leg2_actual_size": 0,
+        "leg2_slippage_cost": 0.0,
+        "expected_leg1_fee": 0.4421736958448049,
+        "actual_leg1_fee": 0.0,
+        "expected_leg2_fee": 0.4421736958448049,
+        "actual_leg2_fee": 0.0,
+        "fee_variance": -0.8843473916896099,
+        "partial_fill_loss": 0.6230083026913027,
+        "rollback_loss": 0.0,
+        "actual_gross_profit": null,
+        "actual_net_profit": null,
+        "primary_loss_category": "partial_fill",
+        "loss_categories": [
+          "partial_fill"
+        ],
+        "total_loss_amount": 0.6230083026913027
+      },
+      "what_if_analysis": {
+        "optimal_profit": 0.3970656859776348,
+        "optimal_leg1_price": 0.41810781107355477,
+        "optimal_leg2_price": 0.42222248139456653,
+        "maker_fee_savings": 0,
+        "timing_loss": 0.0,
+        "size_optimization_potential": 0.6230083026913027,
+        "would_profit_at_detection_prices": true,
+        "profit_at_detection_prices": 0.6230083026913027
+      },
+      "status": "failed",
+      "error_message": "Leg 1 execution failed",
+      "metadata": {
+        "execution_result": "failed"
+      }
+    },
+    {
+      "journal_id": "JOURNAL-C88925F32584",
+      "spread_id": "SPREAD-1FBE85C5",
+      "session_id": "test_20260127_192532",
+      "detected_at": "2026-01-27T19:25:39.038904",
+      "execution_started_at": "2026-01-27T19:25:39.038904",
+      "execution_completed_at": "2026-01-27T19:25:42.551457",
+      "total_duration_ms": 3512,
+      "input_snapshot": {
+        "leg1_quote": {
+          "exchange": "paper",
+          "ticker": "DEMO-002-YES",
+          "bid": 0.5740323524412347,
+          "ask": 0.5904661322460913,
+          "mid": 0.582249242343663,
+          "spread": 0.016433779804856573,
+          "bid_size": 100,
+          "ask_size": 100,
+          "timestamp": "2026-01-27T19:25:39.038884",
+          "age_ms": 0.005
+        },
+        "leg2_quote": {
+          "exchange": "paper",
+          "ticker": "DEMO-002-NO",
+          "bid": 0.515599070540568,
+          "ask": 0.5353198978310847,
+          "mid": 0.5254594841858263,
+          "spread": 0.01972082729051668,
+          "bid_size": 100,
+          "ask_size": 100,
+          "timestamp": "2026-01-27T19:25:39.038888",
+          "age_ms": 0.001
+        },
+        "expected_gross_spread": 0.23963035803442923,
+        "expected_net_spread": 0.308096174615695,
+        "expected_fees": 0.6133673901767063,
+        "capital_available": 10000.0,
+        "active_positions": 0,
+        "active_spreads": 0,
+        "system_load": null
+      },
+      "decision_record": {
+        "opportunity_rank": 3,
+        "total_opportunities": 5,
+        "edge_cents": 3.4232908290632746,
+        "roi_pct": 0.03893056288596529,
+        "liquidity_score": 0.8,
+        "filters_passed": [
+          "min_edge",
+          "min_roi",
+          "min_liquidity"
+        ],
+        "filters_failed": [],
+        "decision_reason": "Demo opportunity 3",
+        "alternative_opportunities": []
+      },
+      "execution_events": [
+        {
+          "event_type": "detection",
+          "timestamp": "2026-01-27T19:25:39.038907",
+          "elapsed_ms": 0.003,
+          "details": {
+            "opportunity_rank": 3
+          }
+        },
+        {
+          "event_type": "decision",
+          "timestamp": "2026-01-27T19:25:39.038909",
+          "elapsed_ms": 0.005,
+          "details": {
+            "reason": "Demo opportunity 3"
+          }
+        },
+        {
+          "event_type": "leg1_submitted",
+          "timestamp": "2026-01-27T19:25:39.038911",
+          "elapsed_ms": 0.007,
+          "details": {}
+        },
+        {
+          "event_type": "completed",
+          "timestamp": "2026-01-27T19:25:42.551459",
+          "elapsed_ms": 3512.555,
+          "details": {
+            "status": "failed"
+          }
+        }
+      ],
+      "pnl_breakdown": {
+        "expected_gross_profit": 0.23963035803442923,
+        "expected_net_profit": 0.308096174615695,
+        "expected_total_fees": 0.6133673901767063,
+        "leg1_expected_price": 0.5904661322460913,
+        "leg1_actual_price": null,
+        "leg1_expected_size": 100,
+        "leg1_actual_size": 0,
+        "leg1_slippage_cost": 0.0,
+        "leg2_expected_price": 0.515599070540568,
+        "leg2_actual_price": null,
+        "leg2_expected_size": 100,
+        "leg2_actual_size": 0,
+        "leg2_slippage_cost": 0.0,
+        "expected_leg1_fee": 0.30668369508835314,
+        "actual_leg1_fee": 0.0,
+        "expected_leg2_fee": 0.30668369508835314,
+        "actual_leg2_fee": 0.0,
+        "fee_variance": -0.6133673901767063,
+        "partial_fill_loss": 0.308096174615695,
+        "rollback_loss": 0.0,
+        "actual_gross_profit": null,
+        "actual_net_profit": null,
+        "primary_loss_category": "partial_fill",
+        "loss_categories": [
+          "partial_fill"
+        ],
+        "total_loss_amount": 0.308096174615695
+      },
+      "what_if_analysis": {
+        "optimal_profit": -7.224671454583006,
+        "optimal_leg1_price": 0.5904661322460913,
+        "optimal_leg2_price": 0.515599070540568,
+        "maker_fee_savings": 0.2620347159693318,
+        "timing_loss": 0.0,
+        "size_optimization_potential": 0.308096174615695,
+        "would_profit_at_detection_prices": true,
+        "profit_at_detection_prices": 0.308096174615695
+      },
+      "status": "failed",
+      "error_message": "Leg 1 execution failed",
+      "metadata": {
+        "execution_result": "failed"
+      }
+    },
+    {
+      "journal_id": "JOURNAL-3074903BF650",
+      "spread_id": "SPREAD-DE750AD3",
+      "session_id": "test_20260127_192532",
+      "detected_at": "2026-01-27T19:25:42.551930",
+      "execution_started_at": "2026-01-27T19:25:42.551930",
+      "execution_completed_at": "2026-01-27T19:25:46.060478",
+      "total_duration_ms": 3508,
+      "input_snapshot": {
+        "leg1_quote": {
+          "exchange": "paper",
+          "ticker": "DEMO-003-YES",
+          "bid": 0.45733149367678044,
+          "ask": 0.47767485138604043,
+          "mid": 0.46750317253141044,
+          "spread": 0.020343357709259983,
+          "bid_size": 100,
+          "ask_size": 100,
+          "timestamp": "2026-01-27T19:25:42.551907",
+          "age_ms": 0.006
+        },
+        "leg2_quote": {
+          "exchange": "paper",
+          "ticker": "DEMO-003-NO",
+          "bid": 0.573408421952718,
+          "ask": 0.6032763735923752,
+          "mid": 0.5883423977725466,
+          "spread": 0.029867951639657123,
+          "bid_size": 100,
+          "ask_size": 100,
+          "timestamp": "2026-01-27T19:25:42.551912",
+          "age_ms": 0.001
+        },
+        "expected_gross_spread": 0.35846533623085186,
+        "expected_net_spread": 0.46088400372538046,
+        "expected_fees": 0.6027035819859152,
+        "capital_available": 10000.0,
+        "active_positions": 0,
+        "active_spreads": 0,
+        "system_load": null
+      },
+      "decision_record": {
+        "opportunity_rank": 4,
+        "total_opportunities": 5,
+        "edge_cents": 5.120933374726455,
+        "roi_pct": 0.08688398652063545,
+        "liquidity_score": 0.8,
+        "filters_passed": [
+          "min_edge",
+          "min_roi",
+          "min_liquidity"
+        ],
+        "filters_failed": [],
+        "decision_reason": "Demo opportunity 4",
+        "alternative_opportunities": []
+      },
+      "execution_events": [
+        {
+          "event_type": "detection",
+          "timestamp": "2026-01-27T19:25:42.551933",
+          "elapsed_ms": 0.003,
+          "details": {
+            "opportunity_rank": 4
+          }
+        },
+        {
+          "event_type": "decision",
+          "timestamp": "2026-01-27T19:25:42.551935",
+          "elapsed_ms": 0.005,
+          "details": {
+            "reason": "Demo opportunity 4"
+          }
+        },
+        {
+          "event_type": "leg1_submitted",
+          "timestamp": "2026-01-27T19:25:42.551937",
+          "elapsed_ms": 0.007,
+          "details": {}
+        },
+        {
+          "event_type": "completed",
+          "timestamp": "2026-01-27T19:25:46.060480",
+          "elapsed_ms": 3508.55,
+          "details": {
+            "status": "failed"
+          }
+        }
+      ],
+      "pnl_breakdown": {
+        "expected_gross_profit": 0.35846533623085186,
+        "expected_net_profit": 0.46088400372538046,
+        "expected_total_fees": 0.6027035819859152,
+        "leg1_expected_price": 0.47767485138604043,
+        "leg1_actual_price": null,
+        "leg1_expected_size": 100,
+        "leg1_actual_size": 0,
+        "leg1_slippage_cost": 0.0,
+        "leg2_expected_price": 0.573408421952718,
+        "leg2_actual_price": null,
+        "leg2_expected_size": 100,
+        "leg2_actual_size": 0,
+        "leg2_slippage_cost": 0.0,
+        "expected_leg1_fee": 0.3013517909929576,
+        "actual_leg1_fee": 0.0,
+        "expected_leg2_fee": 0.3013517909929576,
+        "actual_leg2_fee": 0.0,
+        "fee_variance": -0.6027035819859152,
+        "partial_fill_loss": 0.46088400372538046,
+        "rollback_loss": 0.0,
+        "actual_gross_profit": null,
+        "actual_net_profit": null,
+        "primary_loss_category": "partial_fill",
+        "loss_categories": [
+          "partial_fill"
+        ],
+        "total_loss_amount": 0.46088400372538046
+      },
+      "what_if_analysis": {
+        "optimal_profit": 9.238289559684386,
+        "optimal_leg1_price": 0.47767485138604043,
+        "optimal_leg2_price": 0.573408421952718,
+        "maker_fee_savings": 0,
+        "timing_loss": 0.0,
+        "size_optimization_potential": 0.46088400372538046,
+        "would_profit_at_detection_prices": true,
+        "profit_at_detection_prices": 0.46088400372538046
+      },
+      "status": "failed",
+      "error_message": "Leg 1 execution failed",
+      "metadata": {
+        "execution_result": "failed"
+      }
+    },
+    {
+      "journal_id": "JOURNAL-FE4A2C5B172D",
+      "spread_id": "SPREAD-9716443F",
+      "session_id": "test_20260127_192532",
+      "detected_at": "2026-01-27T19:25:46.060958",
+      "execution_started_at": "2026-01-27T19:25:46.060958",
+      "execution_completed_at": "2026-01-27T19:25:49.570745",
+      "total_duration_ms": 3509,
+      "input_snapshot": {
+        "leg1_quote": {
+          "exchange": "paper",
+          "ticker": "DEMO-004-YES",
+          "bid": 0.45685524683305645,
+          "ask": 0.4700080038834731,
+          "mid": 0.46343162535826476,
+          "spread": 0.013152757050416655,
+          "bid_size": 100,
+          "ask_size": 100,
+          "timestamp": "2026-01-27T19:25:46.060938",
+          "age_ms": 0.005
+        },
+        "leg2_quote": {
+          "exchange": "paper",
+          "ticker": "DEMO-004-NO",
+          "bid": 0.3753490243965343,
+          "ask": 0.395776072641397,
+          "mid": 0.38556254851896565,
+          "spread": 0.020427048244862734,
+          "bid_size": 100,
+          "ask_size": 100,
+          "timestamp": "2026-01-27T19:25:46.060942",
+          "age_ms": 0.001
+        },
+        "expected_gross_spread": 0.34268675241728547,
+        "expected_net_spread": 0.44059725310793824,
+        "expected_fees": 0.40222707536672153,
+        "capital_available": 10000.0,
+        "active_positions": 0,
+        "active_spreads": 0,
+        "system_load": null
+      },
+      "decision_record": {
+        "opportunity_rank": 5,
+        "total_opportunities": 5,
+        "edge_cents": 4.89552503453265,
+        "roi_pct": 0.16308105455862124,
+        "liquidity_score": 0.8,
+        "filters_passed": [
+          "min_edge",
+          "min_roi",
+          "min_liquidity"
+        ],
+        "filters_failed": [],
+        "decision_reason": "Demo opportunity 5",
+        "alternative_opportunities": []
+      },
+      "execution_events": [
+        {
+          "event_type": "detection",
+          "timestamp": "2026-01-27T19:25:46.060961",
+          "elapsed_ms": 0.003,
+          "details": {
+            "opportunity_rank": 5
+          }
+        },
+        {
+          "event_type": "decision",
+          "timestamp": "2026-01-27T19:25:46.060963",
+          "elapsed_ms": 0.005,
+          "details": {
+            "reason": "Demo opportunity 5"
+          }
+        },
+        {
+          "event_type": "leg1_submitted",
+          "timestamp": "2026-01-27T19:25:46.060964",
+          "elapsed_ms": 0.006,
+          "details": {}
+        },
+        {
+          "event_type": "completed",
+          "timestamp": "2026-01-27T19:25:49.570746",
+          "elapsed_ms": 3509.788,
+          "details": {
+            "status": "failed"
+          }
+        }
+      ],
+      "pnl_breakdown": {
+        "expected_gross_profit": 0.34268675241728547,
+        "expected_net_profit": 0.44059725310793824,
+        "expected_total_fees": 0.40222707536672153,
+        "leg1_expected_price": 0.4700080038834731,
+        "leg1_actual_price": null,
+        "leg1_expected_size": 100,
+        "leg1_actual_size": 0,
+        "leg1_slippage_cost": 0.0,
+        "leg2_expected_price": 0.3753490243965343,
+        "leg2_actual_price": null,
+        "leg2_expected_size": 100,
+        "leg2_actual_size": 0,
+        "leg2_slippage_cost": 0.0,
+        "expected_leg1_fee": 0.20111353768336077,
+        "actual_leg1_fee": 0.0,
+        "expected_leg2_fee": 0.20111353768336077,
+        "actual_leg2_fee": 0.0,
+        "fee_variance": -0.40222707536672153,
+        "partial_fill_loss": 0.44059725310793824,
+        "rollback_loss": 0.0,
+        "actual_gross_profit": null,
+        "actual_net_profit": null,
+        "primary_loss_category": "partial_fill",
+        "loss_categories": [
+          "partial_fill"
+        ],
+        "total_loss_amount": 0.44059725310793824
+      },
+      "what_if_analysis": {
+        "optimal_profit": -9.134591520489593,
+        "optimal_leg1_price": 0.4700080038834731,
+        "optimal_leg2_price": 0.3753490243965343,
+        "maker_fee_savings": 0.3313064282042858,
+        "timing_loss": 0.0,
+        "size_optimization_potential": 0.44059725310793824,
+        "would_profit_at_detection_prices": true,
+        "profit_at_detection_prices": 0.44059725310793824
+      },
+      "status": "failed",
+      "error_message": "Leg 1 execution failed",
+      "metadata": {
+        "execution_result": "failed"
+      }
+    }
+  ]
+}

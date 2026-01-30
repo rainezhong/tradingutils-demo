@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Trading Dashboard</h1>
+        <div class="status-bar">
+            <span id="connection-status" class="status-disconnected">Disconnected</span>
+            <span id="uptime">Uptime: --</span>
+            <div class="panel-toggles">
+                <label><input type="checkbox" id="toggle-arb" checked onchange="togglePanel('arb')"> Arb</label>
+                <label><input type="checkbox" id="toggle-mm" checked onchange="togglePanel('mm')"> MM</label>
+                <label><input type="checkbox" id="toggle-nba" checked onchange="togglePanel('nba')"> NBA</label>
+                <label><input type="checkbox" id="toggle-backtest" checked onchange="togglePanel('backtest')"> Backtest</label>
+            </div>
+            <button id="demo-btn" onclick="startDemo()">Start Demo</button>
+        </div>
+    </header>
+
+    <main>
+        <!-- Metrics Panel -->
+        <section class="metrics-panel">
+            <div class="metric-card">
+                <div class="metric-value" id="metric-opportunities">0</div>
+                <div class="metric-label">Active Opportunities</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="metric-bots">0</div>
+                <div class="metric-label">Running Bots</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="metric-executions">0</div>
+                <div class="metric-label">Pending Executions</div>
+            </div>
+            <div class="metric-card profit">
+                <div class="metric-value" id="metric-profit">$0.00</div>
+                <div class="metric-label">Simulated P&L</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="metric-games">0</div>
+                <div class="metric-label">Tracked Games</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="metric-trades">0</div>
+                <div class="metric-label">Signals Generated</div>
+            </div>
+        </section>
+
+        <!-- Main Grid -->
+        <div class="dashboard-grid">
+            <!-- Opportunities Table -->
+            <section class="panel opportunities-panel" data-panel="arb">
+                <h2>Arbitrage Opportunities</h2>
+                <div class="table-container">
+                    <table id="opportunities-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Event</th>
+                                <th>Type</th>
+                                <th>Buy</th>
+                                <th>Sell</th>
+                                <th>Net Edge</th>
+                                <th>Est. Profit</th>
+                                <th>Age</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="empty-row">
+                                <td colspan="8">No active opportunities</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Executions Table -->
+            <section class="panel executions-panel" data-panel="arb">
+                <h2>Executions</h2>
+                <div class="table-container">
+                    <table id="executions-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Status</th>
+                                <th>Leg 1</th>
+                                <th>Leg 2</th>
+                                <th>Expected</th>
+                                <th>Actual</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="empty-row">
+                                <td colspan="6">No executions</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Market Maker Panel -->
+            <section class="panel mm-panel" data-panel="mm">
+                <h2>Market Maker</h2>
+                <div id="mm-container">
+                    <div class="empty-state">No active market makers</div>
+                </div>
+            </section>
+
+            <!-- NBA Strategy Panel -->
+            <section class="panel nba-panel" data-panel="nba">
+                <h2>NBA Strategy - Live Games</h2>
+                <div id="nba-container">
+                    <div class="empty-state">No tracked games</div>
+                </div>
+            </section>
+
+            <!-- Charts -->
+            <section class="panel chart-panel" data-panel="arb">
+                <h2>Opportunity Count</h2>
+                <canvas id="opportunity-chart"></canvas>
+            </section>
+
+            <section class="panel chart-panel">
+                <h2>Cumulative P&L</h2>
+                <canvas id="profit-chart"></canvas>
+            </section>
+
+            <!-- Backtest Panel -->
+            <section class="panel backtest-panel" data-panel="backtest">
+                <h2>Backtest Runner</h2>
+                <div class="backtest-content">
+                    <!-- Configuration Form -->
+                    <div class="backtest-config">
+                        <div class="config-row">
+                            <div class="config-field">
+                                <label for="bt-strategy">Strategy</label>
+                                <select id="bt-strategy" onchange="dashboard.onStrategyChange()">
+                                    <option value="nba_mispricing">NBA Mispricing (1st Half)</option>
+                                    <option value="nba_blowout">NBA Blowout (Late Game)</option>
+                                    <option value="crypto_latency">Crypto Latency</option>
+                                </select>
+                            </div>
+                            <div class="config-field">
+                                <label for="bt-recording">Recording</label>
+                                <select id="bt-recording">
+                                    <option value="">Select recording...</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="config-row" id="nba-params">
+                            <div class="config-field">
+                                <label for="bt-min-edge">Min Edge (cents)</label>
+                                <input type="number" id="bt-min-edge" value="3.0" step="0.5" min="0">
+                            </div>
+                            <div class="config-field">
+                                <label for="bt-position-size">Position Size</label>
+                                <input type="number" id="bt-position-size" value="10" min="1">
+                            </div>
+                            <div class="config-field">
+                                <label for="bt-max-period">Max Period</label>
+                                <select id="bt-max-period">
+                                    <option value="1">Q1 only</option>
+                                    <option value="2" selected>Q1-Q2 (1st half) - Recommended</option>
+                                </select>
+                            </div>
+                            <div class="config-field">
+                                <label for="bt-fill-prob">Fill Probability</label>
+                                <input type="number" id="bt-fill-prob" value="0.8" step="0.1" min="0" max="1">
+                            </div>
+                        </div>
+
+                        <div class="config-row" id="blowout-params" style="display: none;">
+                            <div class="config-field">
+                                <label for="bt-min-lead">Min Lead (points)</label>
+                                <input type="number" id="bt-min-lead" value="12" min="5" max="30">
+                            </div>
+                            <div class="config-field">
+                                <label for="bt-max-time">Max Time Remaining</label>
+                                <select id="bt-max-time">
+                                    <option value="300">5 minutes</option>
+                                    <option value="600" selected>10 minutes</option>
+                                    <option value="720">12 minutes (full Q4)</option>
+                                </select>
+                            </div>
+                            <div class="config-field">
+                                <label for="bt-blowout-size">Position Size ($)</label>
+                                <input type="number" id="bt-blowout-size" value="5" step="1" min="1">
+                            </div>
+                            <div class="config-field blowout-info">
+                                <span class="info-text">Late game strategy: buys the leading team when they have a large lead with limited time remaining.</span>
+                            </div>
+                        </div>
+
+                        <div class="config-row" id="crypto-params" style="display: none;">
+                            <div class="config-field">
+                                <label for="bt-crypto-edge">Min Edge (%)</label>
+                                <input type="number" id="bt-crypto-edge" value="15" step="1" min="0">
+                            </div>
+                            <div class="config-field">
+                                <label for="bt-bankroll">Bankroll ($)</label>
+                                <input type="number" id="bt-bankroll" value="100" step="10" min="1">
+                            </div>
+                            <div class="config-field">
+                                <label for="bt-kelly">Kelly Fraction</label>
+                                <input type="number" id="bt-kelly" value="0.5" step="0.1" min="0" max="1">
+                            </div>
+                            <div class="config-field">
+                                <label for="bt-stability">Stability (sec)</label>
+                                <input type="number" id="bt-stability" value="2.0" step="0.5" min="0">
+                            </div>
+                        </div>
+
+                        <div class="config-actions">
+                            <button id="bt-run-btn" class="btn-primary" onclick="dashboard.runBacktest()">
+                                Run Backtest
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Active Backtest Progress -->
+                    <div id="backtest-progress" class="backtest-progress" style="display: none;">
+                        <div class="progress-header">
+                            <span id="bt-progress-title">Running backtest...</span>
+                            <button class="btn-cancel" onclick="dashboard.cancelBacktest()">Cancel</button>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div id="bt-progress-bar" class="progress-bar" style="width: 0%"></div>
+                        </div>
+                        <div class="progress-stats">
+                            <div class="progress-stat">
+                                <span class="stat-label">Progress</span>
+                                <span id="bt-progress-pct" class="stat-value">0%</span>
+                            </div>
+                            <div class="progress-stat">
+                                <span class="stat-label">Signals</span>
+                                <span id="bt-progress-signals" class="stat-value">0</span>
+                            </div>
+                            <div class="progress-stat">
+                                <span class="stat-label">Trades</span>
+                                <span id="bt-progress-trades" class="stat-value">0</span>
+                            </div>
+                            <div class="progress-stat">
+                                <span class="stat-label">P&L</span>
+                                <span id="bt-progress-pnl" class="stat-value">$0.00</span>
+                            </div>
+                        </div>
+                        <div class="progress-chart">
+                            <canvas id="backtest-equity-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Backtest Results Panel -->
+            <section class="panel backtest-results-panel" data-panel="backtest" id="backtest-results" style="display: none;">
+                <h2>Backtest Results <span id="bt-result-status" class="status-badge"></span></h2>
+                <div class="results-content">
+                    <!-- Summary Metrics -->
+                    <div class="results-summary">
+                        <div class="result-metric">
+                            <div class="result-value" id="bt-result-pnl">$0.00</div>
+                            <div class="result-label">Net P&L</div>
+                        </div>
+                        <div class="result-metric">
+                            <div class="result-value" id="bt-result-accuracy">0%</div>
+                            <div class="result-label">Accuracy</div>
+                        </div>
+                        <div class="result-metric">
+                            <div class="result-value" id="bt-result-trades">0</div>
+                            <div class="result-label">Trades</div>
+                        </div>
+                        <div class="result-metric">
+                            <div class="result-value" id="bt-result-signals">0</div>
+                            <div class="result-label">Signals</div>
+                        </div>
+                        <div class="result-metric">
+                            <div class="result-value" id="bt-result-edge">0c</div>
+                            <div class="result-label">Avg Edge</div>
+                        </div>
+                    </div>
+
+                    <!-- Result Details -->
+                    <div class="results-details" id="bt-result-details"></div>
+
+                    <!-- Price Chart with Trade Markers -->
+                    <div class="results-chart price-chart-container">
+                        <h3>Market Price & Trades</h3>
+                        <div class="chart-legend">
+                            <span class="legend-item"><span class="legend-color price-line"></span> Home Team Price</span>
+                            <span class="legend-item"><span class="legend-marker buy-marker"></span> BUY YES</span>
+                            <span class="legend-item"><span class="legend-marker sell-marker"></span> BUY NO</span>
+                        </div>
+                        <canvas id="backtest-price-chart"></canvas>
+                    </div>
+
+                    <!-- Equity Curve -->
+                    <div class="results-chart">
+                        <h3>Equity Curve</h3>
+                        <canvas id="backtest-result-chart"></canvas>
+                    </div>
+
+                    <!-- Trade List -->
+                    <div class="results-trades">
+                        <h3>Trade Log <span id="bt-trade-count"></span></h3>
+                        <div class="table-container">
+                            <table id="bt-trades-table">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Direction</th>
+                                        <th>Edge</th>
+                                        <th>Fill Price</th>
+                                        <th>Result</th>
+                                        <th>P&L</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="empty-row">
+                                        <td colspan="6">No trades yet</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Activity Log - Full Width -->
+        <section class="panel activity-panel">
+            <h2>Activity Log <span id="activity-count">(0 events)</span></h2>
+            <div class="activity-log" id="activity-log">
+                <div class="empty-state">No activity yet</div>
+            </div>
+        </section>
+    </main>
+
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

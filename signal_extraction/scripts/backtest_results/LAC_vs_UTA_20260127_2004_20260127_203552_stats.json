@@ -1,0 +1,23 @@
+{
+  "session_name": "LAC_vs_UTA_20260127_2004",
+  "duration_minutes": 31.46546865304311,
+  "initial_capital": 10.57,
+  "final_equity": 10.610000000000003,
+  "total_return": 0.37842951750239073,
+  "total_pnl": 0.03999999999999984,
+  "total_trades": 37,
+  "winning_trades": 22,
+  "losing_trades": 15,
+  "win_rate": 59.45945945945946,
+  "gross_profit": 0.415,
+  "gross_loss": 0.3750000000000001,
+  "avg_win": 0.018863636363636364,
+  "avg_loss": 0.02500000000000001,
+  "avg_pnl_per_trade": 0.0010810810810810768,
+  "profit_factor": 1.1066666666666662,
+  "sharpe_ratio": 0.2948472583248932,
+  "max_drawdown": 14.09364858599907,
+  "is_profitable": true,
+  "beats_breakeven": true,
+  "profitability": "BARELY PROFITABLE \u26a0\ufe0f"
+}

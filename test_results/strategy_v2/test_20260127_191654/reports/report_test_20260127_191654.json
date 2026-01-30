@@ -1,0 +1,369 @@
+{
+  "meta": {
+    "session_id": "test_20260127_191654",
+    "generated_at": "2026-01-27T19:17:12.258386",
+    "generator": "ArbitrageTestingFramework",
+    "version": "1.0.0"
+  },
+  "summary": {
+    "total_trades": 5,
+    "successful_trades": 0,
+    "partial_trades": 0,
+    "rolled_back_trades": 0,
+    "failed_trades": 5,
+    "win_rate": 0.0,
+    "total_pnl_usd": 0.0,
+    "profit_factor": 0.0,
+    "sharpe_ratio": null
+  },
+  "pnl": {
+    "gross_profit_usd": 0.0,
+    "gross_loss_usd": 0.0,
+    "total_fees_usd": 0.0,
+    "net_pnl_usd": 0.0,
+    "average_profit_per_trade": 0.0,
+    "average_loss_per_trade": 0.0
+  },
+  "risk": {
+    "max_drawdown_usd": 0.0,
+    "max_drawdown_pct": 0.0
+  },
+  "loss_breakdown": {
+    "slippage": {
+      "leg1_usd": 0.0,
+      "leg2_usd": 0.0,
+      "total_usd": 0.0
+    },
+    "fees_exceeded_usd": 0.0,
+    "partial_fills_usd": 3.25,
+    "failed_leg2_usd": 0.0,
+    "rollback_costs_usd": 0.0,
+    "stale_quotes_usd": 72.72435200000001,
+    "total_usd": 75.97435200000001
+  },
+  "timing": {
+    "session_duration_seconds": 18.083526,
+    "execution_time_ms": {
+      "average": 3519.4,
+      "maximum": 3529,
+      "minimum": 3516
+    },
+    "quote_age_ms": {
+      "average": 7272.520999999999,
+      "maximum": 14563.551,
+      "stale_count": 8
+    }
+  },
+  "warnings": [
+    {
+      "level": "high",
+      "category": "stale_quotes",
+      "message": "8 trades had stale quotes at execution",
+      "affected_trade_ids": [
+        "JOURNAL-1631E5A5B23C",
+        "JOURNAL-288BE28890DA",
+        "JOURNAL-09D9C9C7D2EA",
+        "JOURNAL-8F4CBBD6C2BB"
+      ],
+      "metric_value": 8.0,
+      "threshold": null
+    }
+  ],
+  "notable_trades": {
+    "best": {
+      "trade_id": null,
+      "pnl_usd": null
+    },
+    "worst": {
+      "trade_id": null,
+      "pnl_usd": null
+    }
+  },
+  "all_trades": [
+    {
+      "journal_id": "JOURNAL-D1020FE9B34C",
+      "spread_id": "SPREAD-3B498CF3",
+      "status": "failed",
+      "detected_at": "2026-01-27T19:16:54.067552",
+      "duration_ms": 3516,
+      "input": {
+        "leg1": {
+          "exchange": "paper",
+          "ticker": "BTC-100K-YES",
+          "bid": 0.42,
+          "ask": 0.44,
+          "age_ms": 0.429
+        },
+        "leg2": {
+          "exchange": "paper",
+          "ticker": "BTC-100K-NO",
+          "bid": 0.54,
+          "ask": 0.56,
+          "age_ms": 0.429
+        },
+        "expected_profit": 1.25
+      },
+      "decision": {
+        "rank": 1,
+        "total_opportunities": 5,
+        "edge_cents": 10.000000000000004,
+        "roi_pct": 0.11363636363636363
+      },
+      "execution": {
+        "leg1_filled": false,
+        "leg1_price": null,
+        "leg1_size": 0,
+        "leg2_filled": false,
+        "leg2_price": null,
+        "leg2_size": 0
+      },
+      "pnl": {
+        "expected_gross": 2.500000000000001,
+        "expected_net": 1.25,
+        "actual_gross": null,
+        "actual_net": null,
+        "slippage_leg1": 0.0,
+        "slippage_leg2": 0.0,
+        "fee_variance": -1.715,
+        "partial_fill_loss": 1.25,
+        "rollback_loss": 0.0,
+        "primary_loss_category": "partial_fill"
+      },
+      "what_if": {
+        "optimal_profit": 9.650000000000004,
+        "maker_fee_savings": 0,
+        "timing_loss": 0.0
+      },
+      "event_count": 4,
+      "error": "Leg 1 execution failed"
+    },
+    {
+      "journal_id": "JOURNAL-1631E5A5B23C",
+      "spread_id": "SPREAD-BC2EE4B1",
+      "status": "failed",
+      "detected_at": "2026-01-27T19:16:57.690203",
+      "duration_ms": 3516,
+      "input": {
+        "leg1": {
+          "exchange": "paper",
+          "ticker": "ETH-5K-YES",
+          "bid": 0.38,
+          "ask": 0.4,
+          "age_ms": 3623.123
+        },
+        "leg2": {
+          "exchange": "paper",
+          "ticker": "ETH-5K-NO",
+          "bid": 0.58,
+          "ask": 0.6,
+          "age_ms": 3623.123
+        },
+        "expected_profit": 0.9
+      },
+      "decision": {
+        "rank": 2,
+        "total_opportunities": 5,
+        "edge_cents": 17.999999999999993,
+        "roi_pct": 0.075
+      },
+      "execution": {
+        "leg1_filled": false,
+        "leg1_price": null,
+        "leg1_size": 0,
+        "leg2_filled": false,
+        "leg2_price": null,
+        "leg2_size": 0
+      },
+      "pnl": {
+        "expected_gross": 5.399999999999999,
+        "expected_net": 0.9,
+        "actual_gross": null,
+        "actual_net": null,
+        "slippage_leg1": 0.0,
+        "slippage_leg2": 0.0,
+        "fee_variance": -2.058,
+        "partial_fill_loss": 0.9,
+        "rollback_loss": 0.0,
+        "primary_loss_category": "partial_fill"
+      },
+      "what_if": {
+        "optimal_profit": 17.369999999999994,
+        "maker_fee_savings": 0,
+        "timing_loss": 7.246246000000001
+      },
+      "event_count": 4,
+      "error": "Leg 1 execution failed"
+    },
+    {
+      "journal_id": "JOURNAL-288BE28890DA",
+      "spread_id": "SPREAD-C451582B",
+      "status": "failed",
+      "detected_at": "2026-01-27T19:17:01.312244",
+      "duration_ms": 3516,
+      "input": {
+        "leg1": {
+          "exchange": "paper",
+          "ticker": "PRES-DEM-YES",
+          "bid": 0.48,
+          "ask": 0.5,
+          "age_ms": 7245.171
+        },
+        "leg2": {
+          "exchange": "paper",
+          "ticker": "PRES-DEM-NO",
+          "bid": 0.48,
+          "ask": 0.5,
+          "age_ms": 7245.171
+        },
+        "expected_profit": -0.6
+      },
+      "decision": {
+        "rank": 3,
+        "total_opportunities": 5,
+        "edge_cents": -2.0000000000000018,
+        "roi_pct": -0.06
+      },
+      "execution": {
+        "leg1_filled": false,
+        "leg1_price": null,
+        "leg1_size": 0,
+        "leg2_filled": false,
+        "leg2_price": null,
+        "leg2_size": 0
+      },
+      "pnl": {
+        "expected_gross": -0.40000000000000036,
+        "expected_net": -0.6,
+        "actual_gross": null,
+        "actual_net": null,
+        "slippage_leg1": 0.0,
+        "slippage_leg2": 0.0,
+        "fee_variance": -1.372,
+        "partial_fill_loss": -0.6,
+        "rollback_loss": 0.0,
+        "primary_loss_category": "timing_stale_quote"
+      },
+      "what_if": {
+        "optimal_profit": -1.9300000000000017,
+        "maker_fee_savings": 0.07000000000000006,
+        "timing_loss": 14.490342
+      },
+      "event_count": 4,
+      "error": "Leg 1 execution failed"
+    },
+    {
+      "journal_id": "JOURNAL-09D9C9C7D2EA",
+      "spread_id": "SPREAD-9046EFCE",
+      "status": "failed",
+      "detected_at": "2026-01-27T19:17:04.997457",
+      "duration_ms": 3529,
+      "input": {
+        "leg1": {
+          "exchange": "paper",
+          "ticker": "SP500-5000-YES",
+          "bid": 0.62,
+          "ask": 0.64,
+          "age_ms": 10930.331
+        },
+        "leg2": {
+          "exchange": "paper",
+          "ticker": "SP500-5000-NO",
+          "bid": 0.34,
+          "ask": 0.36,
+          "age_ms": 10930.331
+        },
+        "expected_profit": -0.3
+      },
+      "decision": {
+        "rank": 4,
+        "total_opportunities": 5,
+        "edge_cents": -30.0,
+        "roi_pct": -0.03125
+      },
+      "execution": {
+        "leg1_filled": false,
+        "leg1_price": null,
+        "leg1_size": 0,
+        "leg2_filled": false,
+        "leg2_price": null,
+        "leg2_size": 0
+      },
+      "pnl": {
+        "expected_gross": -4.5,
+        "expected_net": -0.3,
+        "actual_gross": null,
+        "actual_net": null,
+        "slippage_leg1": 0.0,
+        "slippage_leg2": 0.0,
+        "fee_variance": -1.0290000000000001,
+        "partial_fill_loss": -0.3,
+        "rollback_loss": 0.0,
+        "primary_loss_category": "timing_stale_quote"
+      },
+      "what_if": {
+        "optimal_profit": -28.95,
+        "maker_fee_savings": 1.05,
+        "timing_loss": 21.860662
+      },
+      "event_count": 4,
+      "error": "Leg 1 execution failed"
+    },
+    {
+      "journal_id": "JOURNAL-8F4CBBD6C2BB",
+      "spread_id": "SPREAD-D47BA862",
+      "status": "failed",
+      "detected_at": "2026-01-27T19:17:08.630887",
+      "duration_ms": 3520,
+      "input": {
+        "leg1": {
+          "exchange": "paper",
+          "ticker": "BTC-100K-YES",
+          "bid": 0.42,
+          "ask": 0.44,
+          "age_ms": 14563.551
+        },
+        "leg2": {
+          "exchange": "paper",
+          "ticker": "BTC-100K-NO",
+          "bid": 0.54,
+          "ask": 0.56,
+          "age_ms": 14563.551
+        },
+        "expected_profit": 2.0
+      },
+      "decision": {
+        "rank": 5,
+        "total_opportunities": 5,
+        "edge_cents": 10.000000000000004,
+        "roi_pct": 0.11363636363636363
+      },
+      "execution": {
+        "leg1_filled": false,
+        "leg1_price": null,
+        "leg1_size": 0,
+        "leg2_filled": false,
+        "leg2_price": null,
+        "leg2_size": 0
+      },
+      "pnl": {
+        "expected_gross": 4.000000000000002,
+        "expected_net": 2.0,
+        "actual_gross": null,
+        "actual_net": null,
+        "slippage_leg1": 0.0,
+        "slippage_leg2": 0.0,
+        "fee_variance": -2.7440000000000007,
+        "partial_fill_loss": 2.0,
+        "rollback_loss": 0.0,
+        "primary_loss_category": "partial_fill"
+      },
+      "what_if": {
+        "optimal_profit": 9.650000000000004,
+        "maker_fee_savings": 0,
+        "timing_loss": 29.127102
+      },
+      "event_count": 4,
+      "error": "Leg 1 execution failed"
+    }
+  ]
+}

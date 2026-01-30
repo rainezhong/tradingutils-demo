@@ -1,0 +1,673 @@
+{
+  "meta": {
+    "session_id": "demo_20260127_192720",
+    "generated_at": "2026-01-27T19:27:20.252109",
+    "generator": "ArbitrageTestingFramework",
+    "version": "1.0.0"
+  },
+  "summary": {
+    "total_trades": 10,
+    "successful_trades": 7,
+    "partial_trades": 1,
+    "rolled_back_trades": 2,
+    "failed_trades": 0,
+    "win_rate": 0.1,
+    "total_pnl_usd": -4.809518279426566,
+    "profit_factor": 0.01877148454435467,
+    "sharpe_ratio": -1.2628862716025637
+  },
+  "pnl": {
+    "gross_profit_usd": 0.09200894248993935,
+    "gross_loss_usd": 4.9015272219165045,
+    "total_fees_usd": 9.27338643456775,
+    "net_pnl_usd": -4.809518279426566,
+    "average_profit_per_trade": 0.09200894248993935,
+    "average_loss_per_trade": 0.5446141357685005
+  },
+  "risk": {
+    "max_drawdown_usd": 4.809518279426566,
+    "max_drawdown_pct": 0.0
+  },
+  "loss_breakdown": {
+    "slippage": {
+      "leg1_usd": 1.1508183746775786,
+      "leg2_usd": 0.7334754065175934,
+      "total_usd": 1.884293781195172
+    },
+    "fees_exceeded_usd": 8.119525807642233,
+    "partial_fills_usd": 3.517165212245326,
+    "failed_leg2_usd": 1.0789193973899303,
+    "rollback_costs_usd": 0.38660448060490427,
+    "stale_quotes_usd": 0.0,
+    "total_usd": 14.986508679077565
+  },
+  "timing": {
+    "session_duration_seconds": 0.002434,
+    "execution_time_ms": {
+      "average": 0.0,
+      "maximum": 0,
+      "minimum": 0
+    },
+    "quote_age_ms": {
+      "average": 306.8504545341764,
+      "maximum": 498.7905011890853,
+      "stale_count": 0
+    }
+  },
+  "warnings": [
+    {
+      "level": "high",
+      "category": "win_rate",
+      "message": "Win rate (10.0%) is below threshold (60.0%)",
+      "affected_trade_ids": [],
+      "metric_value": 0.1,
+      "threshold": 0.6
+    },
+    {
+      "level": "high",
+      "category": "rollbacks",
+      "message": "High rollback rate: 20.0% of trades rolled back",
+      "affected_trade_ids": [],
+      "metric_value": 0.2,
+      "threshold": 0.1
+    },
+    {
+      "level": "medium",
+      "category": "partial_fills",
+      "message": "Partial fills account for 23.5% of losses",
+      "affected_trade_ids": [],
+      "metric_value": 0.2346887649126435,
+      "threshold": 0.2
+    },
+    {
+      "level": "medium",
+      "category": "fee_variance",
+      "message": "Fee variance accounts for 54.2% of losses",
+      "affected_trade_ids": [],
+      "metric_value": 0.541789017142984,
+      "threshold": 0.15
+    }
+  ],
+  "notable_trades": {
+    "best": {
+      "trade_id": "JOURNAL-E4699E6C6A3C",
+      "pnl_usd": 0.09200894248993935
+    },
+    "worst": {
+      "trade_id": "JOURNAL-CCDA96836240",
+      "pnl_usd": -1.1484012907805048
+    }
+  },
+  "all_trades": [
+    {
+      "journal_id": "JOURNAL-5EF9A47592CE",
+      "spread_id": "DEMO-SPREAD-0000",
+      "status": "success",
+      "detected_at": "2026-01-27T19:27:20.247471",
+      "duration_ms": 0,
+      "input": {
+        "leg1": {
+          "exchange": "demo_exchange_a",
+          "ticker": "DEMO-000-YES",
+          "bid": 0.4427765892824975,
+          "ask": 0.46277658928249754,
+          "age_ms": 104.20810615102363
+        },
+        "leg2": {
+          "exchange": "demo_exchange_b",
+          "ticker": "DEMO-000-YES",
+          "bid": 0.5378070114898784,
+          "ask": 0.5578070114898784,
+          "age_ms": 400.56620015494696
+        },
+        "expected_profit": 1.3550494250652982
+      },
+      "decision": {
+        "rank": 1,
+        "total_opportunities": 4,
+        "edge_cents": 7.5030422207380845,
+        "roi_pct": 0.13943264329423147
+      },
+      "execution": {
+        "leg1_filled": true,
+        "leg1_price": 0.46593901801667437,
+        "leg1_size": 21,
+        "leg2_filled": true,
+        "leg2_price": 0.5314434003300034,
+        "leg2_size": 21
+      },
+      "pnl": {
+        "expected_gross": 1.5756388663549978,
+        "expected_net": 1.3550494250652982,
+        "actual_gross": 1.375592028579909,
+        "actual_net": -0.09056012638970723,
+        "slippage_leg1": 0.06641100341771333,
+        "slippage_leg2": 0.13363583435737603,
+        "fee_variance": 1.2455627136799166,
+        "partial_fill_loss": 0.4371127177629995,
+        "rollback_loss": 0.0,
+        "primary_loss_category": "fees_exceeded"
+      },
+      "what_if": {
+        "optimal_profit": 2.2445350803337987,
+        "maker_fee_savings": 1.384744146874608,
+        "timing_loss": 0.0
+      },
+      "event_count": 7,
+      "error": null
+    },
+    {
+      "journal_id": "JOURNAL-A845F098F74F",
+      "spread_id": "DEMO-SPREAD-0001",
+      "status": "success",
+      "detected_at": "2026-01-27T19:27:20.247814",
+      "duration_ms": 0,
+      "input": {
+        "leg1": {
+          "exchange": "demo_exchange_a",
+          "ticker": "DEMO-001-YES",
+          "bid": 0.652186939593922,
+          "ask": 0.6721869395939221,
+          "age_ms": 88.89452127657862
+        },
+        "leg2": {
+          "exchange": "demo_exchange_b",
+          "ticker": "DEMO-001-YES",
+          "bid": 0.7484197661325156,
+          "ask": 0.7684197661325156,
+          "age_ms": 498.7905011890853
+        },
+        "expected_profit": 0.5244818465855237
+      },
+      "decision": {
+        "rank": 1,
+        "total_opportunities": 5,
+        "edge_cents": 7.6232826538593566,
+        "roi_pct": 0.09753273525783816
+      },
+      "execution": {
+        "leg1_filled": true,
+        "leg1_price": 0.6731305247201904,
+        "leg1_size": 8,
+        "leg2_filled": true,
+        "leg2_price": 0.7510920188887172,
+        "leg2_size": 8
+      },
+      "pnl": {
+        "expected_gross": 0.6098626123087485,
+        "expected_net": 0.5244818465855237,
+        "actual_gross": 0.6236919533482146,
+        "actual_net": -0.17387267107277377,
+        "slippage_leg1": 0.007548681010146829,
+        "slippage_leg2": -0.021378022049613143,
+        "fee_variance": 0.7121838586977636,
+        "partial_fill_loss": 0.2913788036586243,
+        "rollback_loss": 0.0,
+        "primary_loss_category": "fees_exceeded"
+      },
+      "what_if": {
+        "optimal_profit": 1.3241641969753697,
+        "maker_fee_savings": 0.7495379437016745,
+        "timing_loss": 0.0
+      },
+      "event_count": 7,
+      "error": null
+    },
+    {
+      "journal_id": "JOURNAL-FF4A324187C6",
+      "spread_id": "DEMO-SPREAD-0002",
+      "status": "success",
+      "detected_at": "2026-01-27T19:27:20.248075",
+      "duration_ms": 0,
+      "input": {
+        "leg1": {
+          "exchange": "demo_exchange_a",
+          "ticker": "DEMO-002-YES",
+          "bid": 0.37665934312758903,
+          "ask": 0.39665934312758905,
+          "age_ms": 84.60845258587852
+        },
+        "leg2": {
+          "exchange": "demo_exchange_b",
+          "ticker": "DEMO-002-YES",
+          "bid": 0.43461418819064934,
+          "ask": 0.45461418819064936,
+          "age_ms": 110.47391970707024
+        },
+        "expected_profit": 0.456976334559246
+      },
+      "decision": {
+        "rank": 1,
+        "total_opportunities": 2,
+        "edge_cents": 3.79548450630603,
+        "roi_pct": 0.08229017498204381
+      },
+      "execution": {
+        "leg1_filled": true,
+        "leg1_price": 0.40783306771265615,
+        "leg1_size": 14,
+        "leg2_filled": true,
+        "leg2_price": 0.42715615119066136,
+        "leg2_size": 14
+      },
+      "pnl": {
+        "expected_gross": 0.5313678308828442,
+        "expected_net": 0.456976334559246,
+        "actual_gross": 0.27052316869207294,
+        "actual_net": -0.5477662658331783,
+        "slippage_leg1": 0.15643214419093943,
+        "slippage_leg2": 0.10441251799983176,
+        "fee_variance": 0.743897938201653,
+        "partial_fill_loss": 0.1904068060663525,
+        "rollback_loss": 0.0,
+        "primary_loss_category": "fees_exceeded"
+      },
+      "what_if": {
+        "optimal_profit": 0.8790342116604764,
+        "maker_fee_savings": 0.7864073646722805,
+        "timing_loss": 0.0
+      },
+      "event_count": 7,
+      "error": null
+    },
+    {
+      "journal_id": "JOURNAL-15F261AB0A27",
+      "spread_id": "DEMO-SPREAD-0003",
+      "status": "success",
+      "detected_at": "2026-01-27T19:27:20.248328",
+      "duration_ms": 0,
+      "input": {
+        "leg1": {
+          "exchange": "demo_exchange_a",
+          "ticker": "DEMO-003-YES",
+          "bid": 0.38451623913924665,
+          "ask": 0.40451623913924667,
+          "age_ms": 236.1887107635758
+        },
+        "leg2": {
+          "exchange": "demo_exchange_b",
+          "ticker": "DEMO-003-YES",
+          "bid": 0.4269320713401047,
+          "ask": 0.4469320713401047,
+          "age_ms": 278.171243117839
+        },
+        "expected_profit": 0.3662746981620204
+      },
+      "decision": {
+        "rank": 1,
+        "total_opportunities": 2,
+        "edge_cents": 2.241583220085804,
+        "roi_pct": 0.047655974785481926
+      },
+      "execution": {
+        "leg1_filled": true,
+        "leg1_price": 0.4161993745923306,
+        "leg1_size": 19,
+        "leg2_filled": true,
+        "leg2_price": 0.42359266786655825,
+        "leg2_size": 19
+      },
+      "pnl": {
+        "expected_gross": 0.4259008118163028,
+        "expected_net": 0.3662746981620204,
+        "actual_gross": 0.1404725722103256,
+        "actual_net": -0.9764508442599967,
+        "slippage_leg1": 0.22197957360859438,
+        "slippage_leg2": 0.06344866599738241,
+        "fee_variance": 1.05729730281604,
+        "partial_fill_loss": 0.12630162005586912,
+        "rollback_loss": 0.0,
+        "primary_loss_category": "fees_exceeded"
+      },
+      "what_if": {
+        "optimal_profit": 0.6273070641410118,
+        "maker_fee_savings": 1.0941713467864513,
+        "timing_loss": 0.0
+      },
+      "event_count": 7,
+      "error": null
+    },
+    {
+      "journal_id": "JOURNAL-52C78E662C0E",
+      "spread_id": "DEMO-SPREAD-0004",
+      "status": "rolled_back",
+      "detected_at": "2026-01-27T19:27:20.248572",
+      "duration_ms": 0,
+      "input": {
+        "leg1": {
+          "exchange": "demo_exchange_a",
+          "ticker": "DEMO-004-YES",
+          "bid": 0.4933618161257103,
+          "ask": 0.5133618161257103,
+          "age_ms": 475.1816345964191
+        },
+        "leg2": {
+          "exchange": "demo_exchange_b",
+          "ticker": "DEMO-004-YES",
+          "bid": 0.5435209499007679,
+          "ask": 0.563520949900768,
+          "age_ms": 352.59975942351485
+        },
+        "expected_profit": 0.3631159706516941
+      },
+      "decision": {
+        "rank": 1,
+        "total_opportunities": 4,
+        "edge_cents": 3.0159133775057647,
+        "roi_pct": 0.05052353765282428
+      },
+      "execution": {
+        "leg1_filled": true,
+        "leg1_price": 0.5141988901483375,
+        "leg1_size": 14,
+        "leg2_filled": false,
+        "leg2_price": null,
+        "leg2_size": 0
+      },
+      "pnl": {
+        "expected_gross": 0.4222278728508071,
+        "expected_net": 0.3631159706516941,
+        "actual_gross": 0.0,
+        "actual_net": -0.8246657253221032,
+        "slippage_leg1": 0.011719036316781173,
+        "slippage_leg2": 0.0,
+        "fee_variance": 0.4448030101462578,
+        "partial_fill_loss": 0.3631159706516941,
+        "rollback_loss": 0.32075081297673247,
+        "primary_loss_category": "fees_exceeded"
+      },
+      "what_if": {
+        "optimal_profit": 0.6984855382303348,
+        "maker_fee_savings": 0.47858123997432234,
+        "timing_loss": 0.0
+      },
+      "event_count": 9,
+      "error": null
+    },
+    {
+      "journal_id": "JOURNAL-B0A01A1EC811",
+      "spread_id": "DEMO-SPREAD-0005",
+      "status": "rolled_back",
+      "detected_at": "2026-01-27T19:27:20.248828",
+      "duration_ms": 0,
+      "input": {
+        "leg1": {
+          "exchange": "demo_exchange_a",
+          "ticker": "DEMO-005-YES",
+          "bid": 0.5037870768746481,
+          "ask": 0.5237870768746481,
+          "age_ms": 368.43336624437114
+        },
+        "leg2": {
+          "exchange": "demo_exchange_b",
+          "ticker": "DEMO-005-YES",
+          "bid": 0.6165454008176507,
+          "ask": 0.6365454008176508,
+          "age_ms": 407.25780318739135
+        },
+        "expected_profit": 0.3988607929549115
+      },
+      "decision": {
+        "rank": 1,
+        "total_opportunities": 1,
+        "edge_cents": 9.275832394300268,
+        "roi_pct": 0.15229882926277932
+      },
+      "execution": {
+        "leg1_filled": true,
+        "leg1_price": 0.538285726970443,
+        "leg1_size": 5,
+        "leg2_filled": false,
+        "leg2_price": null,
+        "leg2_size": 0
+      },
+      "pnl": {
+        "expected_gross": 0.46379161971501337,
+        "expected_net": 0.3988607929549115,
+        "actual_gross": 0.0,
+        "actual_net": -0.2542536720678269,
+        "slippage_leg1": 0.07249325047897437,
+        "slippage_leg2": 0.0,
+        "fee_variance": 0.12346917767955319,
+        "partial_fill_loss": 0.3988607929549115,
+        "rollback_loss": 0.0658536676281718,
+        "primary_loss_category": "partial_fill"
+      },
+      "what_if": {
+        "optimal_profit": 1.3426767390749634,
+        "maker_fee_savings": 0.13970188436957867,
+        "timing_loss": 0.0
+      },
+      "event_count": 9,
+      "error": null
+    },
+    {
+      "journal_id": "JOURNAL-E4699E6C6A3C",
+      "spread_id": "DEMO-SPREAD-0006",
+      "status": "partial",
+      "detected_at": "2026-01-27T19:27:20.249071",
+      "duration_ms": 0,
+      "input": {
+        "leg1": {
+          "exchange": "demo_exchange_a",
+          "ticker": "DEMO-006-YES",
+          "bid": 0.3134730413415582,
+          "ask": 0.3334730413415582,
+          "age_ms": 292.4680555190352
+        },
+        "leg2": {
+          "exchange": "demo_exchange_b",
+          "ticker": "DEMO-006-YES",
+          "bid": 0.4236114301920594,
+          "ask": 0.4436114301920594,
+          "age_ms": 491.0208018267749
+        },
+        "expected_profit": 1.0077471873486032
+      },
+      "decision": {
+        "rank": 1,
+        "total_opportunities": 4,
+        "edge_cents": 9.013838885050118,
+        "roi_pct": 0.23245961382537228
+      },
+      "execution": {
+        "leg1_filled": true,
+        "leg1_price": 0.3347332318068218,
+        "leg1_size": 4,
+        "leg2_filled": true,
+        "leg2_price": 0.4098567673718109,
+        "leg2_size": 4
+      },
+      "pnl": {
+        "expected_gross": 1.1717990550565154,
+        "expected_net": 1.0077471873486032,
+        "actual_gross": 0.3004941422599565,
+        "actual_net": 0.09200894248993935,
+        "slippage_leg1": 0.005040761861054399,
+        "slippage_leg2": 0.05501865128099381,
+        "fee_variance": 0.04443333206210501,
+        "partial_fill_loss": 0.8324868069401505,
+        "rollback_loss": 0.0,
+        "primary_loss_category": "partial_fill"
+      },
+      "what_if": {
+        "optimal_profit": 2.0006215405368737,
+        "maker_fee_savings": 0.1359237967453637,
+        "timing_loss": 0.0
+      },
+      "event_count": 7,
+      "error": null
+    },
+    {
+      "journal_id": "JOURNAL-70870AA5E23B",
+      "spread_id": "DEMO-SPREAD-0007",
+      "status": "success",
+      "detected_at": "2026-01-27T19:27:20.249300",
+      "duration_ms": 0,
+      "input": {
+        "leg1": {
+          "exchange": "demo_exchange_a",
+          "ticker": "DEMO-007-YES",
+          "bid": 0.33371008350645937,
+          "ask": 0.3537100835064594,
+          "age_ms": 319.16519325687983
+        },
+        "leg2": {
+          "exchange": "demo_exchange_b",
+          "ticker": "DEMO-007-YES",
+          "bid": 0.41184685377924857,
+          "ask": 0.4318468537792486,
+          "age_ms": 470.88477915036526
+        },
+        "expected_profit": 0.999952448691974
+      },
+      "decision": {
+        "rank": 1,
+        "total_opportunities": 2,
+        "edge_cents": 5.813677027278919,
+        "roi_pct": 0.1413519850464926
+      },
+      "execution": {
+        "leg1_filled": true,
+        "leg1_price": 0.3673795363911552,
+        "leg1_size": 20,
+        "leg2_filled": true,
+        "leg2_price": 0.40216022789232625,
+        "leg2_size": 20
+      },
+      "pnl": {
+        "expected_gross": 1.1627354054557837,
+        "expected_net": 0.999952448691974,
+        "actual_gross": 0.6956138300234205,
+        "actual_net": -0.3817418399734538,
+        "slippage_leg1": 0.27338905769391686,
+        "slippage_leg2": 0.19373251773844635,
+        "fee_variance": 0.9145727132330645,
+        "partial_fill_loss": 0.3333174828973247,
+        "rollback_loss": 0.0,
+        "primary_loss_category": "fees_exceeded"
+      },
+      "what_if": {
+        "optimal_profit": 1.683059499397247,
+        "maker_fee_savings": 1.0163120612104457,
+        "timing_loss": 0.0
+      },
+      "event_count": 7,
+      "error": null
+    },
+    {
+      "journal_id": "JOURNAL-CCDA96836240",
+      "spread_id": "DEMO-SPREAD-0008",
+      "status": "success",
+      "detected_at": "2026-01-27T19:27:20.249631",
+      "duration_ms": 0,
+      "input": {
+        "leg1": {
+          "exchange": "demo_exchange_a",
+          "ticker": "DEMO-008-YES",
+          "bid": 0.5724815220794734,
+          "ask": 0.5924815220794735,
+          "age_ms": 103.05275447408764
+        },
+        "leg2": {
+          "exchange": "demo_exchange_b",
+          "ticker": "DEMO-008-YES",
+          "bid": 0.6245870147833411,
+          "ask": 0.6445870147833411,
+          "age_ms": 230.05284799600946
+        },
+        "expected_profit": 0.5798251982318492
+      },
+      "decision": {
+        "rank": 1,
+        "total_opportunities": 1,
+        "edge_cents": 3.2105492703867617,
+        "roi_pct": 0.046601830937138565
+      },
+      "execution": {
+        "leg1_filled": true,
+        "leg1_price": 0.5974741702429672,
+        "leg1_size": 21,
+        "leg2_filled": true,
+        "leg2_price": 0.6286146090414219,
+        "leg2_size": 21
+      },
+      "pnl": {
+        "expected_gross": 0.67421534678122,
+        "expected_net": 0.5798251982318492,
+        "actual_gross": 0.6539492147675472,
+        "actual_net": -1.1484012907805048,
+        "slippage_leg1": 0.10484561143336901,
+        "slippage_leg2": -0.08457947941969568,
+        "fee_variance": 1.7079603569986812,
+        "partial_fill_loss": 0.18704038652640298,
+        "rollback_loss": 0.0,
+        "primary_loss_category": "fees_exceeded"
+      },
+      "what_if": {
+        "optimal_profit": 0.9604358142362006,
+        "maker_fee_savings": 1.7675160459643555,
+        "timing_loss": 0.0
+      },
+      "event_count": 7,
+      "error": null
+    },
+    {
+      "journal_id": "JOURNAL-9CBDE2872B05",
+      "spread_id": "DEMO-SPREAD-0009",
+      "status": "success",
+      "detected_at": "2026-01-27T19:27:20.249895",
+      "duration_ms": 0,
+      "input": {
+        "leg1": {
+          "exchange": "demo_exchange_a",
+          "ticker": "DEMO-009-YES",
+          "bid": 0.4334987652698583,
+          "ask": 0.45349876526985833,
+          "age_ms": 351.8833691640634
+        },
+        "leg2": {
+          "exchange": "demo_exchange_b",
+          "ticker": "DEMO-009-YES",
+          "bid": 0.5168841442000842,
+          "ask": 0.5368841442000842,
+          "age_ms": 473.1070708986177
+        },
+        "expected_profit": 1.0357170917198901
+      },
+      "decision": {
+        "rank": 1,
+        "total_opportunities": 2,
+        "edge_cents": 6.3385378930225835,
+        "roi_pct": 0.12020192788740389
+      },
+      "execution": {
+        "leg1_filled": true,
+        "leg1_price": 0.46565451551544196,
+        "leg1_size": 19,
+        "leg2_filled": true,
+        "leg2_price": 0.507240606350423,
+        "leg2_size": 19
+      },
+      "pnl": {
+        "expected_gross": 1.2043221996742908,
+        "expected_net": 1.0357170917198901,
+        "actual_gross": 0.79013572586464,
+        "actual_net": -0.5038147862169604,
+        "slippage_leg1": 0.23095925466608896,
+        "slippage_leg2": 0.183227219143563,
+        "fee_variance": 1.1253454041271997,
+        "partial_fill_loss": 0.3571438247309966,
+        "rollback_loss": 0.0,
+        "primary_loss_category": "fees_exceeded"
+      },
+      "what_if": {
+        "optimal_profit": 1.7738398293623714,
+        "maker_fee_savings": 1.229614352467421,
+        "timing_loss": 0.0
+      },
+      "event_count": 7,
+      "error": null
+    }
+  ]
+}

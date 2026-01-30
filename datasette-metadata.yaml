@@ -1,0 +1,150 @@
+title: Kalshi Market Data
+description: Real-time prediction market data with hourly snapshots
+
+databases:
+  markets:
+    tables:
+      snapshots:
+        label_column: ticker
+        sort_desc: timestamp
+        description: Hourly price snapshots for liquid markets
+      markets:
+        label_column: ticker
+        description: All tracked Kalshi markets
+
+    queries:
+      best_spreads:
+        title: "Best Spreads (< 10%)"
+        description: "Markets with tightest bid-ask spreads - best for trading"
+        sql: |
+          SELECT
+            s.ticker,
+            m.title,
+            s.yes_bid,
+            s.yes_ask,
+            s.spread_cents || 'c' as spread,
+            round(s.spread_pct, 1) || '%' as spread_pct,
+            s.volume_24h,
+            s.timestamp
+          FROM snapshots s
+          JOIN markets m ON s.ticker = m.ticker
+          WHERE s.spread_pct < 10
+            AND s.spread_pct > 0
+            AND s.timestamp = (SELECT MAX(timestamp) FROM snapshots)
+          ORDER BY s.spread_pct ASC
+          LIMIT 100
+
+      high_volume:
+        title: "High Volume Markets"
+        description: "Most actively traded markets in latest snapshot"
+        sql: |
+          SELECT
+            s.ticker,
+            m.title,
+            s.volume_24h,
+            s.yes_bid,
+            s.yes_ask,
+            round(s.spread_pct, 1) || '%' as spread_pct,
+            s.timestamp
+          FROM snapshots s
+          JOIN markets m ON s.ticker = m.ticker
+          WHERE s.timestamp = (SELECT MAX(timestamp) FROM snapshots)
+            AND s.volume_24h > 0
+          ORDER BY s.volume_24h DESC
+          LIMIT 100
+
+      spread_distribution:
+        title: "Spread Distribution"
+        description: "How spreads are distributed across all markets"
+        sql: |
+          SELECT
+            CASE
+              WHEN spread_pct < 1 THEN '< 1%'
+              WHEN spread_pct < 5 THEN '1-5%'
+              WHEN spread_pct < 10 THEN '5-10%'
+              WHEN spread_pct < 20 THEN '10-20%'
+              WHEN spread_pct < 50 THEN '20-50%'
+              ELSE '50%+'
+            END as spread_bucket,
+            COUNT(*) as market_count,
+            round(AVG(volume_24h), 0) as avg_volume
+          FROM snapshots
+          WHERE timestamp = (SELECT MAX(timestamp) FROM snapshots)
+          GROUP BY spread_bucket
+          ORDER BY MIN(spread_pct)
+
+      latest_snapshot:
+        title: "Latest Snapshot (All)"
+        description: "All markets from the most recent data collection"
+        sql: |
+          SELECT
+            s.ticker,
+            m.title,
+            m.category,
+            s.yes_bid,
+            s.yes_ask,
+            s.spread_cents,
+            round(s.spread_pct, 1) as spread_pct,
+            s.volume_24h,
+            s.open_interest,
+            s.timestamp
+          FROM snapshots s
+          JOIN markets m ON s.ticker = m.ticker
+          WHERE s.timestamp = (SELECT MAX(timestamp) FROM snapshots)
+          ORDER BY s.volume_24h DESC
+
+      price_history:
+        title: "Price History (Enter Ticker)"
+        description: "View price history for a specific market"
+        sql: |
+          SELECT
+            timestamp,
+            yes_bid,
+            yes_ask,
+            spread_cents,
+            round(spread_pct, 1) as spread_pct,
+            volume_24h
+          FROM snapshots
+          WHERE ticker = :ticker
+          ORDER BY timestamp DESC
+          LIMIT 100
+
+      snapshot_summary:
+        title: "Collection Summary"
+        description: "Overview of data collection runs"
+        sql: |
+          SELECT
+            timestamp,
+            COUNT(*) as markets,
+            round(AVG(spread_pct), 1) as avg_spread_pct,
+            SUM(volume_24h) as total_volume,
+            MIN(spread_pct) as min_spread,
+            MAX(spread_pct) as max_spread
+          FROM snapshots
+          GROUP BY timestamp
+          ORDER BY timestamp DESC
+          LIMIT 20
+
+      arbitrage_opportunities:
+        title: "Potential Opportunities"
+        description: "Markets with extreme prices (near 0 or 100) and tight spreads"
+        sql: |
+          SELECT
+            s.ticker,
+            m.title,
+            s.yes_bid,
+            s.yes_ask,
+            round(s.spread_pct, 1) || '%' as spread_pct,
+            s.volume_24h,
+            CASE
+              WHEN s.yes_bid <= 10 THEN 'Low price (YES cheap)'
+              WHEN s.yes_ask >= 90 THEN 'High price (NO cheap)'
+              ELSE 'Mid-range'
+            END as signal
+          FROM snapshots s
+          JOIN markets m ON s.ticker = m.ticker
+          WHERE s.timestamp = (SELECT MAX(timestamp) FROM snapshots)
+            AND s.spread_pct < 15
+            AND (s.yes_bid <= 10 OR s.yes_ask >= 90)
+          ORDER BY s.spread_pct ASC
+          LIMIT 50
