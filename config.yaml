@@ -10,8 +10,8 @@ api_max_retries: 5  # Increased for rate limit recovery
 
 # Authentication (optional - enables higher rate limits)
 # Get your API key from: https://kalshi.com/account/profile
-api_key_id: "002fecc1-1890-4c74-bba1-978443cfbe48"
-api_private_key_path: "kalshi.key"
+api_key_id: "YOUR_KALSHI_API_KEY_ID"
+api_private_key_path: "path/to/your/kalshi.key"
 
 # Rate limiting - conservative to avoid 429 errors
 rate_limits:
