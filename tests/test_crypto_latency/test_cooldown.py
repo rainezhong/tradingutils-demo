@@ -4,13 +4,12 @@ import pytest
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
-from src.strategies.crypto_latency.config import CryptoLatencyConfig
-from src.strategies.crypto_latency.kalshi_executor import (
+from strategies.crypto_latency.config import CryptoLatencyConfig
+from strategies.crypto_latency.kalshi_executor import (
     KalshiExecutor,
     KalshiOpportunity,
-    KalshiPosition,
 )
-from src.strategies.crypto_latency.kalshi_scanner import KalshiCryptoMarket
+from strategies.crypto_latency.kalshi_scanner import KalshiCryptoMarket
 
 
 @pytest.fixture
@@ -138,7 +137,7 @@ class TestCooldownModes:
         # Market expires in 10 minutes, but cooldown is only 1 minute
         market_expiry = datetime.utcnow() + timedelta(minutes=10)
 
-        with patch('src.strategies.crypto_latency.kalshi_executor.datetime') as mock_dt:
+        with patch("src.strategies.crypto_latency.kalshi_executor.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime.utcnow()
             executor.register_cooldown("TEST-TICKER", market_expiry)
 

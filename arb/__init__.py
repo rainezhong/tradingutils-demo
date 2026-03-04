@@ -21,6 +21,12 @@ from .spread_detector import (
     create_detector,
     calculate_fee,
 )
+from .config import ArbitrageConfig
+from .fee_calculator import FeeCalculator
+from .circuit_breaker import CircuitBreaker, CircuitBreakerState
+from .detector import OpportunityDetector, RankedOpportunity
+from .orchestrator import ArbitrageOrchestrator
+from .preflight import PreflightChecker
 
 __all__ = [
     # Live arb monitor (single exchange)
@@ -42,4 +48,13 @@ __all__ = [
     "SpreadDetector",
     "create_detector",
     "calculate_fee",
+    # Arbitrage orchestration
+    "ArbitrageConfig",
+    "FeeCalculator",
+    "CircuitBreaker",
+    "CircuitBreakerState",
+    "OpportunityDetector",
+    "RankedOpportunity",
+    "ArbitrageOrchestrator",
+    "PreflightChecker",
 ]

@@ -1,873 +1,2354 @@
 #!/usr/bin/env python3
-"""Main entry point for the Kalshi market data collection system.
-
-DEMO VERSION - This is a demonstration version with mock API clients.
-No real trading occurs. Strategy logic has been removed.
+"""MrClean CLI — Strategy registry pattern for production trading.
 
 Usage:
-    python main.py scan [--min-volume 1000] [--min-days 7]
-    python main.py log [--tickers TICKER1,TICKER2]
-    python main.py analyze [--days 3] [--min-score 12] [--top 10] [--export FILE]
-    python main.py analyze --strategy market_making --min-suitability 6
-    python main.py analyze --show-strategies
+    python main.py list-strategies
+    python main.py show-config <strategy>
+    python main.py run <strategy> [--tickers T1,T2] [--dry-run] [--config FILE]
+    python main.py scan [--series KXNBAGAME] [--min-volume 100]
+    python main.py record <ticker> [--duration 3600] [--interval 2.0]
     python main.py schedule [--daemon]
     python main.py monitor
     python main.py healthcheck [--alert-if-unhealthy]
-    python main.py pipeline [--skip-errors]
+    python main.py arb <subcommand>
 """
 
 import argparse
+import asyncio
+import logging
 import sys
-from typing import Optional
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
-from src.core import Config, get_config, set_config, setup_logger
-from src.collectors import Scanner, Logger
-from src.analysis import MarketRanker, TradingStrategy
-from src.automation import MarketMakerScheduler, SystemMonitor, HealthCheck, NBAGameScheduler
+# ---------------------------------------------------------------------------
+# Strategy Registry
+# ---------------------------------------------------------------------------
 
-logger = setup_logger(__name__)
+_STRATEGY_REGISTRY: Dict[str, Dict[str, Any]] = {}
 
 
-def print_demo_banner():
-    """Print demo mode banner."""
+def register_strategy(
+    name: str,
+    cls: type,
+    config_cls: Optional[type] = None,
+    yaml_path: Optional[str] = None,
+    description: str = "",
+) -> None:
+    """Register a strategy in the global registry."""
+    _STRATEGY_REGISTRY[name] = {
+        "cls": cls,
+        "config_cls": config_cls,
+        "yaml_path": yaml_path,
+        "description": description,
+    }
+
+
+def get_strategy(name: str) -> Dict[str, Any]:
+    """Look up a registered strategy by name."""
+    if name not in _STRATEGY_REGISTRY:
+        raise KeyError(
+            f"Unknown strategy '{name}'. "
+            f"Available: {', '.join(sorted(_STRATEGY_REGISTRY))}"
+        )
+    return _STRATEGY_REGISTRY[name]
+
+
+def list_strategies() -> List[str]:
+    return sorted(_STRATEGY_REGISTRY.keys())
+
+
+# ---------------------------------------------------------------------------
+# Register built-in strategies
+# ---------------------------------------------------------------------------
+
+
+def _register_builtins() -> None:
+    """Lazy-register all built-in strategies."""
+
+    # Scalp (from MrClean)
+    try:
+        from strategies.scalp_strategy import ScalpStrategy
+        from strategies.strategy_types import ScalpConfig
+
+        register_strategy(
+            "scalp",
+            ScalpStrategy,
+            config_cls=ScalpConfig,
+            yaml_path="strategies/configs/scalp_strategy.yaml",
+            description="Strong-side scalp: buy dominant side, exit on take-profit/stop-loss",
+        )
+    except ImportError:
+        pass
+
+    # Market Making (from MrClean)
+    try:
+        from strategies.market_making_strategy import MarketMakingStrategy
+        from strategies.strategy_types import MarketMakingConfig
+
+        register_strategy(
+            "market-making",
+            MarketMakingStrategy,
+            config_cls=MarketMakingConfig,
+            yaml_path="strategies/configs/marketmaking_strategy.yaml",
+            description="Two-sided quoting with inventory skew",
+        )
+    except ImportError:
+        pass
+
+    # Correlation Arb (from MrClean)
+    try:
+        from strategies.correlation_arb_strategy import CorrelationArbStrategy
+
+        register_strategy(
+            "correlation-arb",
+            CorrelationArbStrategy,
+            yaml_path="strategies/configs/correlation_arb_strategy.yaml",
+            description="Cross-market mispricing detection (spreads, totals, game lines)",
+        )
+    except ImportError:
+        pass
+
+    # Spread Capture
+    try:
+        from strategies.spread_capture_strategy import SpreadCaptureStrategy
+
+        register_strategy(
+            "spread-capture",
+            SpreadCaptureStrategy,
+            yaml_path="strategies/configs/spread_capture_strategy.yaml",
+            description="Buy at bid, sell at ask on wide-spread markets",
+        )
+    except ImportError:
+        pass
+
+    # Edge Capture
+    try:
+        from strategies.edge_capture_strategy import EdgeCaptureStrategy
+
+        register_strategy(
+            "edge-capture",
+            EdgeCaptureStrategy,
+            yaml_path="strategies/configs/edge_capture_strategy.yaml",
+            description="Probability-edge directional trading with Kelly sizing",
+        )
+    except ImportError:
+        pass
+
+    # Late Game Blowout
+    try:
+        from strategies.late_game_blowout_strategy import LateGameBlowoutStrategy
+
+        register_strategy(
+            "blowout",
+            LateGameBlowoutStrategy,
+            yaml_path="strategies/configs/late_game_blowout_strategy.yaml",
+            description="Buy leading team in late-game blowouts",
+        )
+    except ImportError:
+        pass
+
+    # Depth Scalper
+    try:
+        from strategies.depth_scalper_strategy import DepthScalper
+
+        register_strategy(
+            "depth-scalper",
+            DepthScalper,
+            description="Scalping strategy using orderbook depth metrics",
+        )
+    except ImportError:
+        pass
+
+    # Liquidity Provider
+    try:
+        from strategies.liquidity_provider_strategy import LiquidityProvider
+
+        register_strategy(
+            "liquidity-provider",
+            LiquidityProvider,
+            description="Market making via depth-based liquidity provision",
+        )
+    except ImportError:
+        pass
+
+    # NBA Mispricing
+    try:
+        from strategies.nba_mispricing_strategy import NBAMispricingStrategy
+
+        register_strategy(
+            "nba-mispricing",
+            NBAMispricingStrategy,
+            description="NBA early-game mispricing between score-implied and market odds",
+        )
+    except ImportError:
+        pass
+
+    # NBA Underdog Value Betting
+    try:
+        from strategies.nba_underdog_strategy import NBAUnderdogStrategy, NBAUnderdogConfig
+
+        register_strategy(
+            "nba-underdog",
+            NBAUnderdogStrategy,
+            config_cls=NBAUnderdogConfig,
+            description="NBA underdog value betting (10-20¢ + 25-30¢, excludes 20-25¢ negative EV)",
+        )
+    except ImportError:
+        pass
+
+    # NBA Points Arb
+    try:
+        from strategies.nba_points_arb_strategy import NbaPointsArbStrategy
+
+        register_strategy(
+            "nba-points-arb",
+            NbaPointsArbStrategy,
+            description="NBA total points arbitrage across market brackets",
+        )
+    except ImportError:
+        pass
+
+    # Tied Game Spread
+    try:
+        from strategies.tied_game_spread_strategy import TiedGameSpreadStrategy
+
+        register_strategy(
+            "tied-spread",
+            TiedGameSpreadStrategy,
+            description="Spread capture in tied-game scenarios",
+        )
+    except ImportError:
+        pass
+
+    # Total Points Over/Under
+    try:
+        from strategies.total_points_strategy import TotalPointsStrategy
+
+        register_strategy(
+            "total-points",
+            TotalPointsStrategy,
+            description="Over/under total points prediction strategy",
+        )
+    except ImportError:
+        pass
+
+    # Crypto Latency (Kalshi)
+    try:
+        from strategies.crypto_latency import KalshiCryptoOrchestrator
+
+        register_strategy(
+            "crypto-latency",
+            KalshiCryptoOrchestrator,
+            description="Crypto latency arb: spot vs Kalshi 15-min prediction markets",
+        )
+    except ImportError:
+        pass
+
+    # Prediction Market Maker (BS vol-space)
+    try:
+        from strategies.prediction_mm import (
+            PredictionMMOrchestrator,
+            PredictionMMConfig,
+        )
+
+        register_strategy(
+            "prediction-mm",
+            PredictionMMOrchestrator,
+            config_cls=PredictionMMConfig,
+            yaml_path="strategies/configs/prediction_mm_strategy.yaml",
+            description="BS vol-space market maker with Greeks and adverse selection",
+        )
+    except ImportError:
+        pass
+
+    # Crypto Scalp (Kalshi)
+    try:
+        from strategies.crypto_scalp.orchestrator import CryptoScalpStrategy
+        from strategies.crypto_scalp.config import CryptoScalpConfig
+
+        register_strategy(
+            "crypto-scalp",
+            CryptoScalpStrategy,
+            config_cls=CryptoScalpConfig,
+            yaml_path="strategies/configs/crypto_scalp_live.yaml",
+            description="BTC latency scalp: spot exchange moves → stale Kalshi prices",
+        )
+    except ImportError:
+        pass
+
+    # Crypto Scalp Chop (pattern-based timing)
+    try:
+        from strategies.crypto_scalp_chop.orchestrator import ChopStrategy
+        from strategies.crypto_scalp_chop.config import ChopConfig
+
+        register_strategy(
+            "crypto-scalp-chop",
+            ChopStrategy,
+            config_cls=ChopConfig,
+            yaml_path="strategies/configs/crypto_scalp_chop.yaml",
+            description="BTC scalp with empirical timing: exits at predicted peak/trough",
+        )
+    except ImportError:
+        pass
+
+    # NBA Latency Arb (v2 abstraction)
+    try:
+        from strategies.latency_arb.nba import NBALatencyArb
+        from strategies.latency_arb.config import NBALatencyArbConfig
+
+        register_strategy(
+            "nba-latency",
+            NBALatencyArb,
+            config_cls=NBALatencyArbConfig,
+            description="NBA latency arb: live scores vs Kalshi game markets",
+        )
+    except ImportError:
+        pass
+
+    # Crypto Latency v2 (refactored abstraction)
+    try:
+        from strategies.latency_arb.crypto import CryptoLatencyArb
+        from strategies.latency_arb.config import CryptoLatencyArbConfig
+
+        register_strategy(
+            "crypto-latency-v2",
+            CryptoLatencyArb,
+            config_cls=CryptoLatencyArbConfig,
+            description="Crypto latency arb v2: spot vs Kalshi 15-min markets",
+        )
+    except ImportError:
+        pass
+
+
+# ---------------------------------------------------------------------------
+# CLI Commands
+# ---------------------------------------------------------------------------
+
+
+def cmd_list_strategies(args: argparse.Namespace) -> int:
+    print("\nRegistered Strategies")
     print("=" * 60)
-    print("  DEMO MODE - Trading Utils Demonstration Version")
-    print("=" * 60)
-    print("  - No real API connections are made")
-    print("  - All data is simulated/mocked")
-    print("  - Strategy logic has been removed")
-    print("  - For educational purposes only")
-    print("=" * 60)
+    for name in list_strategies():
+        info = _STRATEGY_REGISTRY[name]
+        desc = info.get("description", "")
+        yaml_path = info.get("yaml_path", "")
+        print(f"  {name:<20s} {desc}")
+        if yaml_path:
+            print(f"  {'':20s} config: {yaml_path}")
     print()
+    return 0
+
+
+def cmd_show_config(args: argparse.Namespace) -> int:
+    try:
+        info = get_strategy(args.strategy)
+    except KeyError as e:
+        print(str(e))
+        return 1
+
+    yaml_path = info.get("yaml_path")
+    if yaml_path and Path(yaml_path).exists():
+        print(f"\n--- {yaml_path} ---")
+        print(Path(yaml_path).read_text())
+    else:
+        config_cls = info.get("config_cls")
+        if config_cls:
+            print(f"\nDefault config for {args.strategy}:")
+            import dataclasses
+
+            for f in dataclasses.fields(config_cls):
+                print(
+                    f"  {f.name}: {f.default if f.default is not dataclasses.MISSING else '(required)'}"
+                )
+        else:
+            print(f"No config available for {args.strategy}")
+    return 0
+
+
+def cmd_run(args: argparse.Namespace) -> int:
+    try:
+        info = get_strategy(args.strategy)
+    except KeyError as e:
+        print(str(e))
+        return 1
+
+    strategy_cls = info["cls"]
+    config_cls = info.get("config_cls")
+    yaml_path = args.config or info.get("yaml_path")
+
+    # Load config
+    config = None
+    if config_cls and yaml_path and Path(yaml_path).exists():
+        config = config_cls.from_yaml(yaml_path)
+    elif config_cls:
+        config = config_cls()
+
+    # Set up file logging for live mode
+    log_file_path = None
+    if not args.dry_run:
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        log_dir = Path("logs")
+        log_dir.mkdir(exist_ok=True)
+
+        # Create timestamped log file with strategy name
+        log_file_path = log_dir / f"{args.strategy}_live_{timestamp}.log"
+
+        # Set up file handler
+        file_handler = logging.FileHandler(log_file_path)
+        file_handler.setLevel(logging.INFO)
+        file_formatter = logging.Formatter(
+            "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S"
+        )
+        file_handler.setFormatter(file_formatter)
+
+        # Add file handler to root logger
+        root_logger = logging.getLogger()
+        root_logger.addHandler(file_handler)
+
+    # Build strategy
+    print(f"Starting strategy: {args.strategy}")
+    print(f"Mode: {'DRY RUN' if args.dry_run else 'LIVE'}")
+    if log_file_path:
+        print(f"Log file: {log_file_path}")
+        print(f"Monitor logs: tail -f {log_file_path}")
+
+    try:
+        # Parse tickers
+        tickers = []
+        if args.tickers:
+            tickers = [t.strip() for t in args.tickers.split(",")]
+
+        # Check if strategy needs an exchange client (inspect __init__ signature)
+        import inspect
+        sig = inspect.signature(strategy_cls.__init__)
+        needs_client = "exchange_client" in sig.parameters
+
+        if needs_client:
+            # Strategy needs a Kalshi client — run inside async context manager
+            from core.exchange_client.kalshi.kalshi_client import KalshiExchangeClient
+
+            async def _run_with_client():
+                async with KalshiExchangeClient.from_env() as client:
+                    if config:
+                        strategy = strategy_cls(exchange_client=client, config=config, dry_run=args.dry_run)
+                    else:
+                        strategy = strategy_cls(exchange_client=client, dry_run=args.dry_run)
+                    await _run_strategy(strategy, tickers, args.dry_run)
+
+            asyncio.run(_run_with_client())
+        else:
+            if config:
+                strategy = strategy_cls(config=config)
+            else:
+                strategy = strategy_cls()
+            asyncio.run(_run_strategy(strategy, tickers, args.dry_run))
+
+        return 0
+
+    except KeyboardInterrupt:
+        print("\nStopped by user")
+        if log_file_path:
+            print(f"Session log saved to: {log_file_path}")
+        return 0
+    except Exception as e:
+        logging.error(f"Strategy failed: {e}", exc_info=True)
+        print(f"Error: {e}")
+        if log_file_path:
+            print(f"Full error log saved to: {log_file_path}")
+        return 1
+    finally:
+        # Flush and close file handlers
+        if log_file_path:
+            for handler in logging.getLogger().handlers[:]:
+                if isinstance(handler, logging.FileHandler):
+                    handler.flush()
+                    handler.close()
+
+
+async def _run_strategy(strategy: Any, tickers: List[str], dry_run: bool) -> None:
+    """Run a strategy instance."""
+    # If strategy has I_Strategy interface
+    if hasattr(strategy, "load_markets") and hasattr(strategy, "run"):
+        if tickers:
+            # Manual ticker selection
+            strategy.select_markets(tickers)
+        else:
+            await strategy.load_markets()
+        await strategy.run()
+
+    # If strategy has DepthStrategyBase interface
+    elif hasattr(strategy, "start"):
+        if not tickers:
+            print("Error: --tickers required for this strategy")
+            return
+        await strategy.start(tickers)
+
+    else:
+        print(
+            f"Strategy {type(strategy).__name__} doesn't have a recognized run interface"
+        )
 
 
 def cmd_scan(args: argparse.Namespace) -> int:
-    """Execute the scan command."""
-    print("=== Market Scanner ===\n")
+    from core.exchange_client.kalshi import KalshiExchangeClient
+    from scanner import KalshiScanner, ScanFilter
 
-    scanner = Scanner()
-    try:
-        count = scanner.scan_and_save(
-            min_volume=args.min_volume,
-            min_days_until_close=args.min_days,
-        )
-        print(f"\nScanned and saved {count} markets")
-        return 0
-    except Exception as e:
-        logger.error(f"Scan failed: {e}")
-        print(f"Error: {e}")
-        return 1
-    finally:
-        scanner.close()
-
-
-def cmd_log(args: argparse.Namespace) -> int:
-    """Execute the log command."""
-    print("=== Data Logger ===\n")
-
-    data_logger = Logger()
-    try:
-        if args.bulk:
-            # Fast bulk mode - ~25 API calls instead of 2400+
-            count = data_logger.log_snapshots_bulk(show_progress=not args.quiet)
-        else:
-            tickers = None
-            if args.tickers:
-                tickers = [t.strip() for t in args.tickers.split(",")]
-            count = data_logger.log_snapshots(
-                tickers=tickers,
-                show_progress=not args.quiet,
+    async def _scan():
+        async with KalshiExchangeClient.from_env() as client:
+            scanner = KalshiScanner(client)
+            filters = ScanFilter(
+                series_ticker=args.series,
+                min_volume=args.min_volume,
+                max_spread_cents=args.max_spread,
             )
-        print(f"\nLogged {count} snapshots")
-        return 0
-    except Exception as e:
-        logger.error(f"Logging failed: {e}")
-        print(f"Error: {e}")
-        return 1
-    finally:
-        data_logger.close()
+            results = await scanner.scan(filters)
 
-
-def cmd_analyze(args: argparse.Namespace) -> int:
-    """Execute the analyze command."""
-    print("=== Market Analysis ===\n")
-
-    try:
-        # Check if database has any markets first
-        from src.core import MarketDatabase
-        try:
-            db = MarketDatabase()
-        except Exception as e:
-            print(f"Failed to create database connection: {e}")
-            import traceback
-            traceback.print_exc()
-            return 1
-
-        try:
-            db.init_db()
-        except Exception as e:
-            print(f"Failed to initialize database: {e}")
-            import traceback
-            traceback.print_exc()
-            return 1
-
-        try:
-            markets = db.get_all_markets()
-        except Exception as e:
-            print(f"Failed to get markets: {e}")
-            import traceback
-            traceback.print_exc()
-            return 1
-
-        if not markets:
-            print("No markets in database. Run 'python3 main.py scan' first to populate data.")
-            return 1
-
-        ranker = MarketRanker()
-
-        # Check if filtering by strategy
-        if args.strategy:
-            # Validate strategy name
-            try:
-                TradingStrategy(args.strategy)
-            except ValueError:
-                valid = [s.value for s in TradingStrategy]
-                print(f"Invalid strategy '{args.strategy}'")
-                print(f"Valid strategies: {', '.join(valid)}")
-                return 1
-
-            markets = ranker.get_markets_by_strategy(
-                strategy=args.strategy,
-                min_suitability=args.min_suitability,
-                days=args.days,
-            )
-
-            if markets.empty:
-                print(f"No markets suitable for {args.strategy} strategy")
-                return 0
-
-            print(f"Markets for {args.strategy} (suitability >= {args.min_suitability}):\n")
-            print("-" * 90)
-            print(f"{'Rank':<5} {'Ticker':<25} {'Suitability':<12} {'Score':<8} {'Spread%':<10} {'Volume':<12}")
-            print("-" * 90)
-
-            for idx, row in markets.iterrows():
-                spread = row.get('avg_spread_pct', 0) or 0
-                volume = row.get('avg_volume', 0) or 0
-                suitability = row.get('strategy_suitability', 0) or 0
-                print(f"{idx + 1:<5} {row['ticker']:<25} {suitability:<12.1f} {row['score']:<8.1f} {spread:<10.2f} {volume:<12.0f}")
-
-            print("-" * 90)
-            return 0
-
-        if args.export:
-            # Export to CSV
-            path = ranker.export_to_csv(
-                filename=args.export,
-                days=args.days,
-                min_score=args.min_score,
-                include_strategies=args.show_strategies,
-            )
-            print(f"Exported rankings to {path}")
-        else:
-            # Display top markets
-            include_strategies = args.show_strategies
-            top_markets = ranker.get_top_markets(
-                n=args.top,
-                min_score=args.min_score,
-                days=args.days,
-                include_strategies=include_strategies,
-            )
-
-            if top_markets.empty:
-                print("No markets meet the criteria")
-                return 0
-
-            print(f"Top {len(top_markets)} Markets (score >= {args.min_score}):\n")
-
-            if include_strategies:
-                print("-" * 110)
-                print(f"{'Rank':<5} {'Ticker':<25} {'Score':<8} {'Spread%':<10} {'Volume':<12} {'Best Strategy':<20} {'Suit.':<6}")
-                print("-" * 110)
-
-                for idx, row in top_markets.iterrows():
-                    spread = row.get('avg_spread_pct', 0) or 0
-                    volume = row.get('avg_volume', 0) or 0
-                    best_strategy = row.get('best_strategy', '-') or '-'
-                    strategy_score = row.get('strategy_score', 0) or 0
-                    print(f"{idx + 1:<5} {row['ticker']:<25} {row['score']:<8.1f} {spread:<10.2f} {volume:<12.0f} {best_strategy:<20} {strategy_score:<6.1f}")
-
-                print("-" * 110)
+            if results:
+                print(scanner.format_table(results))
             else:
-                print("-" * 80)
-                print(f"{'Rank':<5} {'Ticker':<25} {'Score':<8} {'Spread%':<10} {'Volume':<12}")
-                print("-" * 80)
+                print("No markets found matching filters")
 
-                for idx, row in top_markets.iterrows():
-                    spread = row.get('avg_spread_pct', 0) or 0
-                    volume = row.get('avg_volume', 0) or 0
-                    print(f"{idx + 1:<5} {row['ticker']:<25} {row['score']:<8.1f} {spread:<10.2f} {volume:<12.0f}")
+    asyncio.run(_scan())
+    return 0
 
-                print("-" * 80)
 
-        return 0
-    except Exception as e:
-        logger.error(f"Analysis failed: {e}")
-        print(f"Error: {e}")
-        return 1
+def cmd_record(args: argparse.Namespace) -> int:
+    from core.exchange_client.kalshi import KalshiExchangeClient
+    from core.recorder import KalshiMarketRecorder
+
+    async def _record():
+        async with KalshiExchangeClient.from_env() as client:
+            recorder = KalshiMarketRecorder(
+                exchange_client=client,
+                ticker=args.ticker,
+                poll_interval=args.interval,
+            )
+            print(
+                f"Recording {args.ticker} (interval={args.interval}s, duration={args.duration}s)"
+            )
+            await recorder.record_async(duration_seconds=args.duration)
+
+    asyncio.run(_record())
+    return 0
 
 
 def cmd_schedule(args: argparse.Namespace) -> int:
-    """Execute the schedule command."""
-    print("=== Scheduler ===\n")
+    from core.automation.scheduler import main as scheduler_main
 
-    scheduler = MarketMakerScheduler()
-
-    if args.run_once:
-        print(f"Running job: {args.run_once}")
-        try:
-            scheduler.run_once(args.run_once)
-            return 0
-        except Exception as e:
-            print(f"Error: {e}")
-            return 1
-        finally:
-            scheduler._cleanup()
-    else:
-        if args.daemon:
-            print("Starting scheduler as daemon...")
-            # In production, you'd use proper daemonization
-            # For now, just run in foreground
-        else:
-            print("Starting scheduler (Ctrl+C to stop)...")
-
-        scheduler.run_forever()
-        return 0
+    scheduler_main()
+    return 0
 
 
 def cmd_monitor(args: argparse.Namespace) -> int:
-    """Execute the monitor command."""
-    monitor = SystemMonitor()
-    try:
-        monitor.display()
-        return 0
-    except Exception as e:
-        logger.error(f"Monitor failed: {e}")
-        print(f"Error: {e}")
-        return 1
-    finally:
-        monitor.close()
+    from core.automation.monitor import main as monitor_main
+
+    monitor_main()
+    return 0
 
 
 def cmd_healthcheck(args: argparse.Namespace) -> int:
-    """Execute the healthcheck command."""
-    checker = HealthCheck()
-    status = checker.run_all_checks()
-    print(status)
+    from core.automation.healthcheck import main as healthcheck_main
 
-    if args.alert_if_unhealthy and not status.healthy:
-        return 1
+    healthcheck_main()
     return 0
 
 
-def cmd_pipeline(args: argparse.Namespace) -> int:
-    """Execute the full pipeline."""
-    from pipeline import DataPipeline
-
-    print("=== Data Pipeline ===\n")
-
-    pipeline = DataPipeline()
+def cmd_arb(args: argparse.Namespace) -> int:
     try:
-        results = pipeline.run_full_pipeline(skip_on_error=args.skip_errors)
+        from arb.cli import main as arb_main
 
-        print("\n" + "=" * 50)
-        print("Pipeline Summary:")
-        print("=" * 50)
-        for stage, result in results.items():
-            status = "OK" if result.get("success") else "FAILED"
-            print(f"  {stage}: {status}")
-            if result.get("count"):
-                print(f"    Count: {result['count']}")
-            if result.get("error"):
-                print(f"    Error: {result['error']}")
-
-        # Return 1 if any stage failed
-        if any(not r.get("success") for r in results.values()):
-            return 1
-        return 0
-    except Exception as e:
-        logger.error(f"Pipeline failed: {e}")
-        print(f"Error: {e}")
+        arb_main()
+    except ImportError as e:
+        print(f"Arb subsystem not available: {e}")
         return 1
-    finally:
-        pipeline.close()
-
-
-def cmd_run_simulation(args: argparse.Namespace) -> int:
-    """Run market-making with simulated data."""
-    print("=== Market-Making Simulation ===\n")
-
-    try:
-        from src.core.config import RiskConfig
-        from src.engine import MarketMakingEngine
-        from src.execution.mock_api_client import MockAPIClient
-        from src.market_making.config import MarketMakerConfig
-        from src.simulation import get_scenario, create_simulator
-
-        # Create simulator from scenario
-        try:
-            scenario_config = get_scenario(args.scenario)
-        except ValueError as e:
-            print(f"Error: {e}")
-            return 1
-
-        simulator = create_simulator(scenario_config, args.ticker)
-
-        # Create mock API client that wraps the simulator
-        api_client = MockAPIClient()
-
-        # Create configs
-        mm_config = MarketMakerConfig(
-            target_spread=args.spread,
-            max_position=args.max_position,
-            quote_size=10,
-        )
-
-        risk_config = RiskConfig(
-            max_position_size=args.max_position,
-            max_total_position=args.max_position * 2,
-            max_loss_per_position=25.0,
-            max_daily_loss=100.0,
-        )
-
-        # Create engine
-        engine = MarketMakingEngine(
-            ticker=args.ticker,
-            api_client=api_client,
-            mm_config=mm_config,
-            risk_config=risk_config,
-        )
-
-        print(f"Ticker: {args.ticker}")
-        print(f"Scenario: {args.scenario}")
-        print(f"Steps: {args.steps}")
-        print(f"Target Spread: {args.spread:.1%}")
-        print(f"Max Position: {args.max_position}")
-        print()
-
-        # Run simulation
-        for i in range(args.steps):
-            market = simulator.generate_market_state()
-
-            # Convert to market_making MarketState
-            from src.market_making.models import MarketState as MMMarketState
-            mm_market = MMMarketState(
-                ticker=args.ticker,
-                timestamp=market.timestamp,
-                best_bid=market.bid,
-                best_ask=market.ask,
-                mid_price=market.mid,
-                bid_size=100,
-                ask_size=100,
-            )
-
-            engine.on_market_update(mm_market)
-
-            if args.verbose and (i + 1) % 10 == 0:
-                status = engine.get_status()
-                pos = status["market_maker"]["position"]
-                print(
-                    f"Step {i+1}: mid={market.mid:.4f}, "
-                    f"pos={pos['contracts']}, "
-                    f"pnl=${pos['total_pnl']:.2f}"
-                )
-
-        # Print final status
-        status = engine.get_status()
-        pos = status["market_maker"]["position"]
-        stats = status["market_maker"]["stats"]
-
-        print("\n" + "=" * 50)
-        print("SIMULATION COMPLETE")
-        print("=" * 50)
-        print(f"Position: {pos['contracts']} contracts")
-        print(f"Avg Entry: {pos['avg_entry_price']:.4f}")
-        print(f"Unrealized P&L: ${pos['unrealized_pnl']:.2f}")
-        print(f"Realized P&L: ${pos['realized_pnl']:.2f}")
-        print(f"Total P&L: ${pos['total_pnl']:.2f}")
-        print(f"Quotes Generated: {stats['quotes_generated']}")
-        print(f"Fills: {stats['quotes_filled']}")
-        print(f"Volume: {stats['total_volume']}")
-
-        return 0
-
-    except Exception as e:
-        logger.error(f"Simulation failed: {e}")
-        print(f"Error: {e}")
-        import traceback
-        traceback.print_exc()
-        return 1
-
-
-def cmd_run_single(args: argparse.Namespace) -> int:
-    """Run market-making on a single market."""
-    print("=== Single Market Trading ===\n")
-    print(f"Ticker: {args.ticker}")
-    print(f"Target Spread: {args.spread:.1%}")
-    print(f"Quote Size: {args.size}")
-    print(f"Max Position: {args.max_position}")
-    print()
-
-    if args.dry_run:
-        print("DRY RUN MODE - Real market data, orders logged but not placed")
-        print("-" * 50)
-
-        try:
-            from src.core.config import RiskConfig
-            from src.engine import MarketMakingEngine
-            from src.execution.dry_run_client import DryRunAPIClient
-            from src.market_making.config import MarketMakerConfig
-
-            # In a full implementation, you would create the real API client here
-            # real_client = create_real_api_client()
-            # For now, we'll use None and the dry run client will error on market data
-            # You should replace this with your actual API client creation
-            dry_run_client = DryRunAPIClient(real_client=None, simulate_fills=True)
-
-            mm_config = MarketMakerConfig(
-                target_spread=args.spread,
-                max_position=args.max_position,
-                quote_size=args.size,
-            )
-
-            risk_config = RiskConfig(
-                max_position_size=args.max_position,
-                max_total_position=args.max_position * 2,
-                max_loss_per_position=args.max_loss,
-                max_daily_loss=args.daily_loss,
-            )
-
-            engine = MarketMakingEngine(
-                ticker=args.ticker,
-                api_client=dry_run_client,
-                mm_config=mm_config,
-                risk_config=risk_config,
-            )
-
-            print(f"\nDry run engine created for {args.ticker}")
-            print("Note: Connect a real API client to receive live market data.")
-            print("Orders will be logged with [DRY RUN] prefix but not executed.")
-
-            # Print summary at the end
-            dry_run_client.print_summary()
-
-            return 0
-
-        except Exception as e:
-            logger.error(f"Dry run failed: {e}")
-            print(f"Error: {e}")
-            import traceback
-            traceback.print_exc()
-            return 1
-
-    elif args.paper:
-        print("Paper trading mode - simulated data, no API connection")
-        print("Use --dry-run for real market data without executing orders.")
-        print("This would connect to the market and run the strategy.")
-
-    else:
-        print("WARNING: Live trading is not yet implemented.")
-        print("Use --paper for paper trading or --dry-run for dry run mode.")
-
     return 0
-
-
-def cmd_run_multi(args: argparse.Namespace) -> int:
-    """Run market-making on multiple markets."""
-    print("=== Multi-Market Trading ===\n")
-
-    tickers = [t.strip() for t in args.tickers.split(",")]
-    print(f"Markets: {', '.join(tickers)}")
-    print(f"Target Spread: {args.spread:.1%}")
-    print(f"Max Total Position: {args.max_total_position}")
-    print()
-
-    if args.dry_run:
-        print("DRY RUN MODE - Real market data, orders logged but not placed")
-        print("-" * 50)
-
-        try:
-            from src.core.config import RiskConfig
-            from src.engine import MultiMarketEngine
-            from src.execution.dry_run_client import DryRunAPIClient
-            from src.market_making.config import MarketMakerConfig
-
-            # Create dry run client (replace None with real client for live data)
-            dry_run_client = DryRunAPIClient(real_client=None, simulate_fills=True)
-
-            mm_config = MarketMakerConfig(
-                target_spread=args.spread,
-                max_position=args.max_total_position // len(tickers),
-            )
-
-            risk_config = RiskConfig(
-                max_position_size=args.max_total_position // len(tickers),
-                max_total_position=args.max_total_position,
-                max_loss_per_position=args.daily_loss / len(tickers),
-                max_daily_loss=args.daily_loss,
-            )
-
-            engine = MultiMarketEngine(
-                api_client=dry_run_client,
-                default_mm_config=mm_config,
-                global_risk_config=risk_config,
-            )
-
-            for ticker in tickers:
-                engine.add_market(ticker)
-                print(f"  Added market: {ticker}")
-
-            print(f"\nDry run engine created for {len(tickers)} markets")
-            print("Note: Connect a real API client to receive live market data.")
-            print("Orders will be logged with [DRY RUN] prefix but not executed.")
-
-            dry_run_client.print_summary()
-
-            return 0
-
-        except Exception as e:
-            logger.error(f"Dry run failed: {e}")
-            print(f"Error: {e}")
-            import traceback
-            traceback.print_exc()
-            return 1
-
-    elif args.paper:
-        print("Paper trading mode - simulated data, no API connection")
-        print("Use --dry-run for real market data without executing orders.")
-
-    else:
-        print("WARNING: Live trading is not yet implemented.")
-        print("Use --paper for paper trading or --dry-run for dry run mode.")
-
-    return 0
-
-
-def cmd_nba_record(args: argparse.Namespace) -> int:
-    """Run NBA game auto-scheduler."""
-    print("=== NBA Game Auto-Scheduler ===\n")
-
-    scheduler = NBAGameScheduler(
-        poll_interval=args.poll_interval,
-        demo=args.demo,
-        verbose=args.verbose,
-    )
-
-    if args.once:
-        print("Running single poll...")
-        started = scheduler.poll_once()
-        print(f"Started {started} new recorder(s)")
-
-        status = scheduler.get_status()
-        print(f"Active: {status['active_count']}, Completed today: {status['completed_count']}")
-
-        for game in status["active_games"]:
-            print(f"  Recording: {game['matchup']} ({game['frames']} frames)")
-        return 0
-    else:
-        print(f"Poll interval: {args.poll_interval}s")
-        print("Press Ctrl+C to stop...")
-        print()
-
-        try:
-            scheduler.run_forever()
-        except KeyboardInterrupt:
-            print("\nShutdown requested...")
-            scheduler.stop()
-
-        return 0
 
 
 def cmd_backtest(args: argparse.Namespace) -> int:
-    """Backtest strategy on historical data."""
-    print("=== Strategy Backtest ===\n")
+    strategy = args.strategy
 
-    print(f"Ticker: {args.ticker}")
-    print(f"Days: {args.days}")
-    print(f"Target Spread: {args.spread:.1%}")
-    print()
+    # Legacy dispatch: crypto-latency uses its own bespoke engine when
+    # --legacy flag is passed (or by default for backwards compat).
+    if strategy == "crypto-latency" and getattr(args, "legacy", False):
+        return _backtest_crypto_latency_legacy(args)
+
+    # Unified backtest dispatch
+
+    BACKTEST_REGISTRY = {
+        "nba-mispricing": _backtest_nba_mispricing,
+        "nba-underdog": _backtest_nba_underdog,
+        "nba-underdog-grid": _grid_search_nba_underdog,
+        "blowout": _backtest_blowout,
+        "total-points": _backtest_total_points,
+        "crypto-latency": _backtest_crypto_latency,
+        "crypto-scalp": _backtest_crypto_scalp,
+        "crypto-scalp-chop": _backtest_crypto_scalp_chop,
+        "crypto-scalp-hmm-gbm": _backtest_crypto_scalp_hmm_gbm,
+        "prediction-mm": _backtest_prediction_mm,
+    }
+
+    handler = BACKTEST_REGISTRY.get(strategy)
+    if handler is None:
+        print(f"Unknown backtest strategy: {strategy}")
+        print(f"Available: {', '.join(sorted(BACKTEST_REGISTRY))}")
+        return 1
 
     try:
-        from src.core import MarketDatabase
-
-        db = MarketDatabase()
-
-        # Get historical snapshots
-        from datetime import datetime, timedelta
-        end_time = datetime.now()
-        start_time = end_time - timedelta(days=args.days)
-
-        snapshots = db.get_snapshots_in_range(
-            args.ticker,
-            start_time.isoformat(),
-            end_time.isoformat(),
-        )
-
-        if not snapshots:
-            print(f"No historical data found for {args.ticker}")
-            return 1
-
-        print(f"Found {len(snapshots)} snapshots")
-        print()
-
-        # Run backtest simulation
-        from src.core.config import RiskConfig
-        from src.engine import MarketMakingEngine
-        from src.execution.mock_api_client import MockAPIClient
-        from src.market_making.config import MarketMakerConfig
-        from src.market_making.models import MarketState as MMMarketState
-
-        api_client = MockAPIClient()
-
-        mm_config = MarketMakerConfig(
-            target_spread=args.spread,
-            max_position=50,
-        )
-
-        risk_config = RiskConfig(
-            max_position_size=50,
-            max_total_position=100,
-            max_loss_per_position=25.0,
-            max_daily_loss=100.0,
-        )
-
-        engine = MarketMakingEngine(
-            ticker=args.ticker,
-            api_client=api_client,
-            mm_config=mm_config,
-            risk_config=risk_config,
-        )
-
-        # Process each snapshot
-        for snap in snapshots:
-            if snap.yes_bid is None or snap.yes_ask is None:
-                continue
-
-            mm_market = MMMarketState(
-                ticker=args.ticker,
-                timestamp=datetime.now(),
-                best_bid=snap.yes_bid / 100.0,
-                best_ask=snap.yes_ask / 100.0,
-                mid_price=snap.mid_price / 100.0 if snap.mid_price else (snap.yes_bid + snap.yes_ask) / 200.0,
-                bid_size=snap.orderbook_bid_depth or 0,
-                ask_size=snap.orderbook_ask_depth or 0,
-            )
-
-            engine.on_market_update(mm_market)
-
-        # Print results
-        status = engine.get_status()
-        pos = status["market_maker"]["position"]
-        stats = status["market_maker"]["stats"]
-
-        print("=" * 50)
-        print("BACKTEST RESULTS")
-        print("=" * 50)
-        print(f"Snapshots Processed: {len(snapshots)}")
-        print(f"Final Position: {pos['contracts']}")
-        print(f"Total P&L: ${pos['total_pnl']:.2f}")
-        print(f"Realized P&L: ${pos['realized_pnl']:.2f}")
-        print(f"Unrealized P&L: ${pos['unrealized_pnl']:.2f}")
-        print(f"Quotes Generated: {stats['quotes_generated']}")
-        print(f"Fills: {stats['quotes_filled']}")
-        print(f"Volume: {stats['total_volume']}")
-
-        if args.output:
-            import json
-            with open(args.output, 'w') as f:
-                json.dump({
-                    "ticker": args.ticker,
-                    "days": args.days,
-                    "snapshots": len(snapshots),
-                    "final_position": pos['contracts'],
-                    "total_pnl": pos['total_pnl'],
-                    "realized_pnl": pos['realized_pnl'],
-                    "quotes_generated": stats['quotes_generated'],
-                    "fills": stats['quotes_filled'],
-                    "volume": stats['total_volume'],
-                }, f, indent=2)
-            print(f"\nResults saved to {args.output}")
-
+        handler(args)
         return 0
-
     except Exception as e:
-        logger.error(f"Backtest failed: {e}")
+        logging.error(f"Backtest failed: {e}", exc_info=True)
         print(f"Error: {e}")
-        import traceback
-        traceback.print_exc()
         return 1
 
 
-def main() -> int:
-    """Main entry point."""
-    print_demo_banner()
+# ---------------------------------------------------------------------------
+# Validation helper (shared by all backtest handlers)
+# ---------------------------------------------------------------------------
 
-    parser = argparse.ArgumentParser(
-        description="Kalshi Market Data Collection System",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=__doc__,
-    )
-    parser.add_argument(
-        "--config",
-        type=str,
-        default=None,
-        help="Path to config file",
-    )
 
-    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+def _run_validation(
+    args: argparse.Namespace,
+    result: Any,
+    feed: Any = None,
+    adapter_factory: Any = None,
+    engine: Any = None,
+) -> None:
+    """Run validation analyses based on CLI flags and print results.
 
-    # Scan command
-    scan_parser = subparsers.add_parser("scan", help="Scan for markets")
-    scan_parser.add_argument("--min-volume", type=int, default=None, help="Minimum 24h volume")
-    scan_parser.add_argument("--min-days", type=int, default=7, help="Minimum days until close")
+    Args:
+        args: CLI args with validation flags.
+        result: BacktestResult from engine.run().
+        feed: DataFeed (needed for walk-forward).
+        adapter_factory: Callable returning fresh adapter (needed for walk-forward).
+        engine: BacktestEngine (needed for walk-forward).
+    """
+    validate_all = getattr(args, "validate", False)
+    do_mc = validate_all or getattr(args, "monte_carlo", False)
+    do_bs = validate_all or getattr(args, "bootstrap", False)
+    do_perm = validate_all or getattr(args, "permutation", False)
+    do_wf = getattr(args, "walk_forward", False)
 
-    # Log command
-    log_parser = subparsers.add_parser("log", help="Log market snapshots")
-    log_parser.add_argument("--tickers", type=str, default=None, help="Comma-separated tickers")
-    log_parser.add_argument("--quiet", action="store_true", help="Suppress progress output")
-    log_parser.add_argument("--bulk", action="store_true", help="Fast bulk mode - fetches all markets in ~25 API calls")
+    if not (do_mc or do_bs or do_perm or do_wf):
+        # Always run extended metrics
+        from src.backtesting.validation import ExtendedMetrics
 
-    # Analyze command
-    analyze_parser = subparsers.add_parser("analyze", help="Analyze and rank markets")
-    analyze_parser.add_argument("--days", type=int, default=3, help="Days of data to analyze")
-    analyze_parser.add_argument("--min-score", type=float, default=12.0, help="Minimum score threshold")
-    analyze_parser.add_argument("--top", type=int, default=10, help="Number of top markets to show")
-    analyze_parser.add_argument("--export", type=str, default=None, help="Export to CSV file")
-    analyze_parser.add_argument(
-        "--strategy",
-        type=str,
-        default=None,
-        help="Filter by strategy (market_making, spread_trading, momentum, scalping, arbitrage, event_trading)",
-    )
-    analyze_parser.add_argument(
-        "--min-suitability",
-        type=float,
-        default=6.0,
-        help="Minimum strategy suitability score (default: 6.0)",
-    )
-    analyze_parser.add_argument(
-        "--show-strategies",
-        action="store_true",
-        help="Show strategy labels in output",
+        ext = ExtendedMetrics.compute(
+            result.fills, result.settlements, result.bankroll_curve
+        )
+        print()
+        print(ext.report())
+        return
+
+    from src.backtesting.validation import (
+        MonteCarloConfig,
+        MonteCarloMode,
+        BootstrapConfig,
+        PermutationConfig,
+        WalkForwardConfig,
+        WalkForwardRunner,
+        run_validation_suite,
     )
 
-    # Schedule command
-    schedule_parser = subparsers.add_parser("schedule", help="Start the scheduler")
-    schedule_parser.add_argument("--daemon", action="store_true", help="Run as daemon")
-    schedule_parser.add_argument(
-        "--run-once",
-        type=str,
-        choices=["scan_markets", "log_data", "analyze_markets"],
-        default=None,
-        help="Run a specific job once",
+    seed = getattr(args, "seed", None)
+
+    mc_config = None
+    if do_mc:
+        mode_str = getattr(args, "mc_mode", "sequence")
+        mc_config = MonteCarloConfig(
+            n_simulations=getattr(args, "mc_sims", 10000),
+            mode=MonteCarloMode(mode_str),
+            seed=seed,
+        )
+
+    bs_config = None
+    if do_bs:
+        bs_config = BootstrapConfig(
+            n_samples=getattr(args, "bs_samples", 10000),
+            seed=seed,
+        )
+
+    perm_config = None
+    if do_perm:
+        perm_config = PermutationConfig(
+            n_permutations=getattr(args, "perm_n", 10000),
+            seed=seed,
+        )
+
+    suite = run_validation_suite(
+        result,
+        run_extended=True,
+        run_monte_carlo=do_mc,
+        run_bootstrap=do_bs,
+        run_permutation=do_perm,
+        mc_config=mc_config,
+        bs_config=bs_config,
+        perm_config=perm_config,
     )
 
-    # Monitor command
-    subparsers.add_parser("monitor", help="Display system status")
+    # Walk-forward (needs feed, adapter_factory, engine)
+    if do_wf and feed is not None and adapter_factory is not None and engine is not None:
+        wf_config = WalkForwardConfig(
+            n_splits=getattr(args, "wf_splits", 5),
+            train_pct=getattr(args, "wf_train_pct", 0.70),
+            expanding_window=getattr(args, "wf_expanding", False),
+        )
+        runner = WalkForwardRunner(wf_config)
+        suite.walk_forward = runner.run(
+            feed, adapter_factory, engine,
+            verbose=getattr(args, "verbose", False),
+        )
 
-    # Healthcheck command
-    health_parser = subparsers.add_parser("healthcheck", help="Run health checks")
-    health_parser.add_argument(
-        "--alert-if-unhealthy",
-        action="store_true",
-        help="Exit with code 1 if unhealthy",
+    print()
+    print(suite.report())
+
+
+# ---------------------------------------------------------------------------
+# Backtest handlers (unified engine)
+# ---------------------------------------------------------------------------
+
+
+def _backtest_nba_mispricing(args: argparse.Namespace) -> None:
+    from src.backtesting.engine import BacktestEngine, BacktestConfig
+    from src.backtesting.adapters.nba_adapter import NBADataFeed, NBAMispricingAdapter
+
+    recording = getattr(args, "recording", None)
+    if not recording:
+        print("Error: --recording PATH required for nba-mispricing")
+        print(
+            "Usage: python3 main.py backtest nba-mispricing --recording data/recordings/game.json"
+        )
+        raise SystemExit(1)
+
+    feed = NBADataFeed(recording)
+    adapter = NBAMispricingAdapter(
+        min_edge_cents=args.edge,
+        max_period=2,
+        position_size=10,
+    )
+    config = BacktestConfig(
+        initial_bankroll=args.bankroll,
+        fill_probability=getattr(args, "fill_prob", 1.0),
+        slippage=args.slippage / 100.0,
+    )
+    engine = BacktestEngine(config)
+    result = engine.run(feed, adapter, verbose=getattr(args, "verbose", False))
+    print(result.report())
+
+    def _make_adapter():
+        return NBAMispricingAdapter(
+            min_edge_cents=args.edge, max_period=2, position_size=10,
+        )
+    _run_validation(args, result, feed=feed, adapter_factory=_make_adapter, engine=engine)
+
+
+def _backtest_nba_underdog(args: argparse.Namespace) -> None:
+    from src.backtesting.engine import BacktestEngine, BacktestConfig
+    from src.backtesting.adapters.underdog_adapter import (
+        NBAUnderdogCSVFeed,
+        NBAUnderdogDataFeed,
+        NBAUnderdogAdapter,
     )
 
-    # Pipeline command
-    pipeline_parser = subparsers.add_parser("pipeline", help="Run full data pipeline")
-    pipeline_parser.add_argument(
-        "--skip-errors",
-        action="store_true",
-        help="Continue on non-critical failures",
+    csv_path = getattr(args, "csv", None)
+    db_path = getattr(args, "db", None)
+
+    min_price = getattr(args, "underdog_min", 10)
+    max_price = getattr(args, "underdog_max", 30)
+    stop_loss = getattr(args, "underdog_stop_loss", 22)
+    position_size = getattr(args, "underdog_size", 10)
+    sample_sec = getattr(args, "sample_interval", 30.0)
+    min_mtc = getattr(args, "min_minutes", 0.0)
+    max_mtc = getattr(args, "max_minutes", 999.0)
+
+    if csv_path:
+        feed = NBAUnderdogCSVFeed(csv_path=csv_path)
+    else:
+        if not db_path:
+            db_path = str(Path(__file__).parent / "data" / "probe_nba.db")
+        feed = NBAUnderdogDataFeed(db_path=db_path, sample_interval_sec=sample_sec)
+
+    adapter = NBAUnderdogAdapter(
+        min_price_cents=min_price,
+        max_price_cents=max_price,
+        position_size=position_size,
+        stop_loss_cents=stop_loss,
+        min_minutes_before=min_mtc,
+        max_minutes_before=max_mtc,
     )
 
-    # Market-Making Commands
-    # run-simulation command
-    sim_parser = subparsers.add_parser("run-simulation", help="Run market-making with simulated data")
-    sim_parser.add_argument("--ticker", type=str, default="SIM-MARKET", help="Simulated ticker name")
-    sim_parser.add_argument("--steps", type=int, default=100, help="Number of simulation steps")
-    sim_parser.add_argument("--scenario", type=str, default="stable_market",
-                           help="Scenario: stable_market, volatile_market, trending_up, trending_down, mean_reverting")
-    sim_parser.add_argument("--spread", type=float, default=0.04, help="Target spread (e.g., 0.04 for 4%%)")
-    sim_parser.add_argument("--max-position", type=int, default=50, help="Maximum position size")
-    sim_parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
+    config = BacktestConfig(
+        initial_bankroll=args.bankroll,
+        fill_probability=getattr(args, "fill_prob", 1.0),
+    )
+    engine = BacktestEngine(config)
 
-    # run-single command
-    single_parser = subparsers.add_parser("run-single", help="Run market-making on single market")
-    single_parser.add_argument("ticker", type=str, help="Market ticker")
-    single_parser.add_argument("--paper", action="store_true", help="Paper trading mode (simulated data, no API)")
-    single_parser.add_argument("--dry-run", action="store_true", help="Dry run mode (real data, orders logged but not placed)")
-    single_parser.add_argument("--spread", type=float, default=0.04, help="Target spread")
-    single_parser.add_argument("--size", type=int, default=20, help="Quote size")
-    single_parser.add_argument("--max-position", type=int, default=50, help="Maximum position")
-    single_parser.add_argument("--max-loss", type=float, default=50.0, help="Max loss per position (dollars)")
-    single_parser.add_argument("--daily-loss", type=float, default=200.0, help="Max daily loss (dollars)")
+    print("=" * 60)
+    print("  NBA UNDERDOG BACKTEST")
+    print("=" * 60)
+    meta = feed.metadata
+    for k, v in meta.items():
+        print(f"  {k}: {v}")
+    print(f"  price_range: {min_price}-{max_price}c")
+    print(f"  stop_loss: {stop_loss}c")
+    print(f"  entry_window: {min_mtc}-{max_mtc} min before close")
+    print(f"  position_size: {position_size}")
+    print("=" * 60)
 
-    # run-multi command
-    multi_parser = subparsers.add_parser("run-multi", help="Run market-making on multiple markets")
-    multi_parser.add_argument("tickers", type=str, help="Comma-separated market tickers")
-    multi_parser.add_argument("--paper", action="store_true", help="Paper trading mode (simulated data)")
-    multi_parser.add_argument("--dry-run", action="store_true", help="Dry run mode (real data, orders logged)")
-    multi_parser.add_argument("--spread", type=float, default=0.04, help="Target spread")
-    multi_parser.add_argument("--max-total-position", type=int, default=200, help="Max total position")
-    multi_parser.add_argument("--daily-loss", type=float, default=500.0, help="Max daily loss")
+    result = engine.run(feed, adapter, verbose=getattr(args, "verbose", False))
+    print(result.report())
+    print()
+    print("--- Underdog Details ---")
+    print(adapter.summary())
+    print()
 
-    # backtest command
-    backtest_parser = subparsers.add_parser("backtest", help="Backtest strategy on historical data")
-    backtest_parser.add_argument("ticker", type=str, help="Market ticker")
-    backtest_parser.add_argument("--days", type=int, default=7, help="Days of historical data")
-    backtest_parser.add_argument("--spread", type=float, default=0.04, help="Target spread")
-    backtest_parser.add_argument("--output", type=str, default=None, help="Output file for results")
+    def _make_underdog_adapter():
+        return NBAUnderdogAdapter(
+            min_price_cents=min_price,
+            max_price_cents=max_price,
+            position_size=position_size,
+            stop_loss_cents=stop_loss,
+            min_minutes_before=min_mtc,
+            max_minutes_before=max_mtc,
+        )
+    _run_validation(args, result, feed=feed, adapter_factory=_make_underdog_adapter, engine=engine)
 
-    # nba-record command
-    nba_parser = subparsers.add_parser("nba-record", help="Auto-detect and record NBA games")
-    nba_parser.add_argument("--once", action="store_true", help="Poll once and exit (for testing)")
-    nba_parser.add_argument("--poll-interval", type=int, default=300, help="Poll interval in seconds (default: 300)")
-    nba_parser.add_argument("--demo", action="store_true", help="Use Kalshi demo API")
-    nba_parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
 
-    args = parser.parse_args()
+def _grid_search_nba_underdog(args: argparse.Namespace) -> None:
+    """Run parameter sensitivity analysis for NBA underdog strategy."""
+    import itertools
+    import pandas as pd
+    from src.backtesting.engine import BacktestEngine, BacktestConfig
+    from src.backtesting.adapters.underdog_adapter import (
+        NBAUnderdogDataFeed,
+        NBAUnderdogAdapter,
+    )
+
+    db_path = getattr(args, "db", None)
+    if not db_path:
+        db_path = str(Path(__file__).parent / "data" / "probe_nba.db")
+
+    # Define parameter grid
+    price_ranges = [
+        (10, 15), (10, 20), (15, 20), (15, 25), (20, 25),
+        (20, 30), (25, 30), (10, 25), (10, 30), (15, 30),
+    ]
+    stop_losses = [0, 10, 15, 20, 22, 25, 30, 40, 50]
+
+    # Optional: allow user to specify custom ranges
+    if hasattr(args, "price_ranges") and args.price_ranges:
+        price_ranges = [tuple(map(int, r.split(","))) for r in args.price_ranges]
+    if hasattr(args, "stop_losses") and args.stop_losses:
+        stop_losses = [int(s) for s in args.stop_losses]
+
+    print("=" * 80)
+    print("NBA UNDERDOG STRATEGY - PARAMETER GRID SEARCH")
+    print("=" * 80)
+    print(f"Database: {db_path}")
+    print(f"Price ranges: {len(price_ranges)}")
+    for min_p, max_p in price_ranges:
+        print(f"  {min_p}-{max_p}¢")
+    print(f"Stop losses: {stop_losses}")
+    print(f"Total combinations: {len(price_ranges) * len(stop_losses)}")
+    print("=" * 80)
+    print()
+
+    # Load data once
+    sample_sec = getattr(args, "sample_interval", 30.0)
+    feed = NBAUnderdogDataFeed(db_path=db_path, sample_interval_sec=sample_sec)
+
+    meta = feed.metadata
+    print("Dataset:")
+    for k, v in meta.items():
+        print(f"  {k}: {v}")
+    print()
+
+    # Run grid search
+    results = []
+    config = BacktestConfig(
+        initial_bankroll=args.bankroll,
+        fill_probability=getattr(args, "fill_prob", 1.0),
+    )
+
+    total = len(price_ranges) * len(stop_losses)
+    count = 0
+
+    for (min_p, max_p), stop_loss in itertools.product(price_ranges, stop_losses):
+        count += 1
+        print(f"[{count}/{total}] Testing {min_p}-{max_p}¢, stop {stop_loss}¢...", end=" ")
+
+        adapter = NBAUnderdogAdapter(
+            min_price_cents=min_p,
+            max_price_cents=max_p,
+            position_size=10,
+            stop_loss_cents=stop_loss,
+        )
+
+        engine = BacktestEngine(config)
+        result = engine.run(feed, adapter, verbose=False)
+
+        # Extract metrics
+        m = result.metrics
+        total_pnl = m.net_pnl
+        num_trades = m.total_fills
+        win_rate = m.win_rate_pct
+        avg_pnl = total_pnl / num_trades if num_trades > 0 else 0
+        roi = m.return_pct
+        max_dd = m.max_drawdown_pct * m.initial_bankroll  # Convert percentage to dollar amount
+        stopped_out = adapter.stop_loss_exits
+        stopped_out_pct = (stopped_out / num_trades * 100) if num_trades > 0 else 0
+
+        results.append({
+            "price_range": f"{min_p}-{max_p}¢",
+            "min_price": min_p,
+            "max_price": max_p,
+            "stop_loss": stop_loss,
+            "num_trades": num_trades,
+            "win_rate": win_rate,
+            "avg_pnl": avg_pnl,
+            "total_pnl": total_pnl,
+            "roi": roi,
+            "max_dd": max_dd,
+            "stopped_out": stopped_out,
+            "stopped_out_pct": stopped_out_pct,
+        })
+
+        print(f"ROI: {roi:+.1f}%, trades: {num_trades}, wins: {win_rate:.0f}%")
+
+    print()
+    print("=" * 80)
+    print("GRID SEARCH COMPLETE")
+    print("=" * 80)
+    print()
+
+    # Convert to DataFrame for analysis
+    df = pd.DataFrame(results)
+
+    # Top configurations by ROI
+    print("TOP 15 CONFIGURATIONS BY ROI")
+    print("=" * 80)
+    top_roi = df.nlargest(15, "roi")[[
+        "price_range", "stop_loss", "num_trades", "win_rate",
+        "avg_pnl", "roi", "max_dd", "stopped_out_pct"
+    ]]
+    print(top_roi.to_string(index=False))
+    print()
+
+    # By price range
+    print("PERFORMANCE BY PRICE RANGE (averaged across stop losses)")
+    print("=" * 80)
+    by_price = df.groupby("price_range").agg({
+        "num_trades": "first",
+        "win_rate": "mean",
+        "avg_pnl": "mean",
+        "roi": "mean",
+    }).round(2).sort_values("roi", ascending=False)
+    print(by_price.to_string())
+    print()
+
+    # By stop loss
+    print("PERFORMANCE BY STOP LOSS (averaged across price ranges)")
+    print("=" * 80)
+    by_stop = df.groupby("stop_loss").agg({
+        "num_trades": "mean",
+        "win_rate": "mean",
+        "avg_pnl": "mean",
+        "roi": "mean",
+        "stopped_out_pct": "mean",
+    }).round(2).sort_values("roi", ascending=False)
+    print(by_stop.to_string())
+    print()
+
+    # Best configuration
+    best = df.loc[df["roi"].idxmax()]
+    print("BEST CONFIGURATION")
+    print("=" * 80)
+    print(f"Price range: {best['price_range']}")
+    print(f"Stop loss: {best['stop_loss']}¢")
+    print(f"ROI: {best['roi']:.2f}%")
+    print(f"Trades: {best['num_trades']:.0f}")
+    print(f"Win rate: {best['win_rate']:.1f}%")
+    print(f"Avg P&L: {best['avg_pnl']:.2f}¢")
+    print(f"Total P&L: {best['total_pnl']:.0f}¢")
+    print(f"Max DD: {best['max_dd']:.0f}¢")
+    print()
+
+    # Save results
+    output_file = "data/nba_underdog_grid_search.csv"
+    df.to_csv(output_file, index=False)
+    print(f"✓ Saved detailed results to {output_file}")
+    print()
+
+
+def _backtest_blowout(args: argparse.Namespace) -> None:
+    from src.backtesting.engine import BacktestEngine, BacktestConfig
+    from src.backtesting.adapters.nba_adapter import NBADataFeed, BlowoutAdapter
+
+    recording = getattr(args, "recording", None)
+    if not recording:
+        print("Error: --recording PATH required for blowout")
+        raise SystemExit(1)
+
+    feed = NBADataFeed(recording)
+    adapter = BlowoutAdapter()
+    config = BacktestConfig(
+        initial_bankroll=args.bankroll,
+        fill_probability=getattr(args, "fill_prob", 1.0),
+        slippage=args.slippage / 100.0,
+    )
+    engine = BacktestEngine(config)
+    result = engine.run(feed, adapter, verbose=getattr(args, "verbose", False))
+    print(result.report())
+    _run_validation(args, result, feed=feed, adapter_factory=BlowoutAdapter, engine=engine)
+
+
+def _backtest_total_points(args: argparse.Namespace) -> None:
+    from src.backtesting.engine import BacktestEngine, BacktestConfig
+    from src.backtesting.adapters.nba_adapter import NBADataFeed, TotalPointsAdapter
+
+    recording = getattr(args, "recording", None)
+    if not recording:
+        print("Error: --recording PATH required for total-points")
+        raise SystemExit(1)
+
+    feed = NBADataFeed(recording)
+    adapter = TotalPointsAdapter(
+        min_edge_cents=args.edge,
+    )
+    config = BacktestConfig(
+        initial_bankroll=args.bankroll,
+        fill_probability=getattr(args, "fill_prob", 1.0),
+        slippage=args.slippage / 100.0,
+    )
+    engine = BacktestEngine(config)
+    result = engine.run(feed, adapter, verbose=getattr(args, "verbose", False))
+    print(result.report())
+
+    def _make_tp_adapter():
+        return TotalPointsAdapter(min_edge_cents=args.edge)
+    _run_validation(args, result, feed=feed, adapter_factory=_make_tp_adapter, engine=engine)
+
+
+def _backtest_crypto_latency(args: argparse.Namespace) -> None:
+    from src.backtesting.engine import BacktestEngine, BacktestConfig
+
+    # Check if intelligent exits requested
+    use_intelligent = getattr(args, "intelligent_exits", False)
+
+    if use_intelligent:
+        from src.backtesting.adapters.crypto_latency_intelligent import (
+            CryptoLatencyDataFeed,
+            CryptoLatencyIntelligentAdapter,
+        )
+    else:
+        from src.backtesting.adapters.crypto_adapter import (
+            CryptoLatencyDataFeed,
+            CryptoLatencyAdapter,
+        )
+
+    db_path = getattr(args, "db", None)
+    if not db_path:
+        db_path = str(Path(__file__).parent / "data" / "btc_latency_probe.db")
+
+    feed = CryptoLatencyDataFeed(
+        db_path=db_path,
+        use_spot_price=not getattr(args, "use_avg", False),
+    )
+
+    if use_intelligent:
+        # Intelligent exits adapter
+        print("🧠 Using IntelligentExitManager with data-driven exits\n")
+        adapter = CryptoLatencyIntelligentAdapter(
+            vol=args.vol,
+            min_edge=args.edge,
+            slippage_cents=args.slippage,
+            min_spread_cents=getattr(args, "min_spread", 3),
+            max_gap_pct=getattr(args, "max_gap", 0.05) / 100.0
+            if getattr(args, "max_gap", 0.05) > 1
+            else getattr(args, "max_gap", 0.05),
+            bankroll=args.bankroll,
+            one_entry_per_market=getattr(args, "one_per_market", False),
+            cooldown_sec=getattr(args, "cooldown", 60.0),
+            # Intelligent exit parameters
+            enable_intelligent_exits=True,
+            edge_convergence_threshold=getattr(args, "edge_threshold", 0.30),
+            trailing_stop_activation=getattr(args, "trail_activation", 0.05),
+            trailing_stop_distance=getattr(args, "trail_distance", 0.03),
+            velocity_threshold=getattr(args, "velocity_threshold", 0.01),
+            spread_widening_threshold=getattr(args, "spread_threshold", 5),
+            profit_target_cents=getattr(args, "profit_target", None),
+            max_hold_time_sec=getattr(args, "max_hold", 60.0),
+            fixed_exit_delay_sec=getattr(args, "fixed_exit", 15.0),
+        )
+    else:
+        # Standard fixed-time exit adapter
+        print("⏱️  Using fixed 15s exit (baseline)\n")
+        adapter = CryptoLatencyAdapter(
+            vol=args.vol,
+            min_edge=args.edge,
+            slippage_cents=args.slippage,
+            min_spread_cents=getattr(args, "min_spread", 3),
+            max_gap_pct=getattr(args, "max_gap", 0.05) / 100.0
+            if getattr(args, "max_gap", 0.05) > 1
+            else getattr(args, "max_gap", 0.05),
+            bankroll=args.bankroll,
+            one_entry_per_market=getattr(args, "one_per_market", False),
+            cooldown_sec=getattr(args, "cooldown", 60.0),
+        )
+
+    config = BacktestConfig(
+        initial_bankroll=args.bankroll,
+        fill_probability=getattr(args, "fill_prob", 1.0),
+        slippage=args.slippage / 100.0,
+    )
+    engine = BacktestEngine(config)
+    result = engine.run(feed, adapter, verbose=getattr(args, "verbose", False))
+
+    # Print standard report
+    print(result.report())
+
+    # Print intelligent exits statistics if enabled
+    if use_intelligent and hasattr(adapter, "get_stats"):
+        print("\n" + "=" * 70)
+        print("INTELLIGENT EXIT STATISTICS")
+        print("=" * 70)
+        stats = adapter.get_stats()
+        print(f"Total entries:        {stats['total_entries']}")
+        print(f"Total exits:          {stats['total_exits']}")
+        print(f"Intelligent exits:    {stats['intelligent_exits']} ({stats['intelligent_exits']/max(1,stats['total_exits'])*100:.1f}%)")
+        print(f"Fixed time exits:     {stats['fixed_time_exits']} ({stats['fixed_time_exits']/max(1,stats['total_exits'])*100:.1f}%)")
+        print(f"\nExit reasons breakdown:")
+        for reason, count in sorted(stats['exit_reasons'].items(), key=lambda x: x[1], reverse=True):
+            pct = count / max(1, stats['total_exits']) * 100
+            print(f"  {reason:20s}: {count:3d} ({pct:5.1f}%)")
+        print("=" * 70 + "\n")
+
+    def _make_cl_adapter():
+        if use_intelligent:
+            return CryptoLatencyIntelligentAdapter(
+                vol=args.vol, min_edge=args.edge, slippage_cents=args.slippage,
+                min_spread_cents=getattr(args, "min_spread", 3),
+                max_gap_pct=getattr(args, "max_gap", 0.05) / 100.0
+                if getattr(args, "max_gap", 0.05) > 1
+                else getattr(args, "max_gap", 0.05),
+                bankroll=args.bankroll,
+                one_entry_per_market=getattr(args, "one_per_market", False),
+                cooldown_sec=getattr(args, "cooldown", 60.0),
+                enable_intelligent_exits=True,
+                edge_convergence_threshold=getattr(args, "edge_threshold", 0.30),
+                trailing_stop_activation=getattr(args, "trail_activation", 0.05),
+                trailing_stop_distance=getattr(args, "trail_distance", 0.03),
+                velocity_threshold=getattr(args, "velocity_threshold", 0.01),
+                spread_widening_threshold=getattr(args, "spread_threshold", 5),
+                profit_target_cents=getattr(args, "profit_target", None),
+                max_hold_time_sec=getattr(args, "max_hold", 60.0),
+            )
+        else:
+            return CryptoLatencyAdapter(
+                vol=args.vol, min_edge=args.edge, slippage_cents=args.slippage,
+                min_spread_cents=getattr(args, "min_spread", 3),
+                max_gap_pct=getattr(args, "max_gap", 0.05) / 100.0
+                if getattr(args, "max_gap", 0.05) > 1
+                else getattr(args, "max_gap", 0.05),
+                bankroll=args.bankroll,
+                one_entry_per_market=getattr(args, "one_per_market", False),
+                cooldown_sec=getattr(args, "cooldown", 60.0),
+            )
+    _run_validation(args, result, feed=feed, adapter_factory=_make_cl_adapter, engine=engine)
+
+
+def _backtest_crypto_scalp(args: argparse.Namespace) -> None:
+    from src.backtesting.engine import BacktestEngine, BacktestConfig
+    from src.backtesting.realism_config import BacktestRealismConfig
+    from src.backtesting.adapters.scalp_adapter import (
+        CryptoScalpDataFeed,
+        CryptoScalpAdapter,
+    )
+
+    db_path = getattr(args, "db", None)
+    if not db_path:
+        db_path = str(Path(__file__).parent / "data" / "btc_scalp_probe.db")
+
+    spot_move = getattr(args, "spot_move", 10.0)
+    regime_threshold = getattr(args, "regime_threshold", None)
+    regime_window = getattr(args, "regime_window", 60.0)
+    lookback = getattr(args, "lookback", 5.0)
+    signal_feed = getattr(args, "signal_feed", "binance")
+    verbose = getattr(args, "verbose", False)
+
+    # Realism profile
+    realism_profile = getattr(args, "realism", None)
+    if realism_profile == "optimistic":
+        realism = BacktestRealismConfig.optimistic()
+    elif realism_profile == "pessimistic":
+        realism = BacktestRealismConfig.pessimistic()
+    elif realism_profile == "realistic":
+        realism = BacktestRealismConfig.realistic()
+    else:
+        realism = None  # Use adapter's built-in fill simulation
+
+    feed = CryptoScalpDataFeed(
+        db_path=db_path,
+        lookback_sec=lookback,
+        regime_window_sec=regime_window,
+    )
+
+    def _make_adapter(threshold: float) -> CryptoScalpAdapter:
+        return CryptoScalpAdapter(
+            signal_feed=signal_feed,
+            min_spot_move_usd=spot_move,
+            contracts_per_trade=5,
+            exit_delay_sec=getattr(args, "fixed_exit", 20.0),
+            max_hold_sec=getattr(args, "max_hold", 35.0),
+            cooldown_sec=getattr(args, "cooldown", 15.0),
+            require_multi_exchange_confirm=True,
+            regime_osc_threshold=threshold,
+            slippage_cents=args.slippage,
+            # Crash protection (2026-03-01)
+            min_entry_bid_depth=5,
+            enable_entry_liquidity_check=True,
+            stop_loss_cents=15,
+            stop_loss_delay_sec=0.0,  # No delay - crashes happen fast!
+            enable_stop_loss=True,
+            # Realistic fill simulation (2026-03-01)
+            enable_fill_simulation=True,
+            base_fill_rate=0.65,  # 65% baseline (realistic for latency arb)
+            adverse_selection_factor=0.3,  # Strong signals fill 30% less
+            fill_latency_ms=(200.0, 500.0),  # 200-500ms latency
+            slippage_probability=0.2,  # 20% chance of slippage
+            max_slippage_cents=3,  # Max 3¢ worse price
+        )
+
+    engine_cfg = BacktestConfig(
+        initial_bankroll=args.bankroll,
+        cooldown_seconds=0,  # adapter handles cooldown
+        realism=realism,  # Apply realism profile if specified
+    )
+    engine = BacktestEngine(engine_cfg)
+
+    # If user passed a specific threshold, run that + baseline comparison
+    if regime_threshold is not None and regime_threshold > 0:
+        thresholds = [0.0, regime_threshold]
+    else:
+        # Default comparison: sweep key thresholds
+        thresholds = [0.0, 3.0, 5.0, 8.0]
+
+    print("=" * 70)
+    print("  CRYPTO SCALP BACKTEST — REGIME FILTER COMPARISON")
+    print("=" * 70)
+    print("  DB: %s" % db_path)
+    print(
+        "  Signal feed: %s | Spot move: $%.0f | Lookback: %.0fs"
+        % (
+            signal_feed,
+            spot_move,
+            lookback,
+        )
+    )
+    print("  Regime window: %.0fs" % regime_window)
+    print(
+        "  Thresholds: %s"
+        % ", ".join("%.1f" % t if t > 0 else "disabled" for t in thresholds)
+    )
+    if realism_profile:
+        print(f"  Realism profile: {realism_profile}")
+    meta = feed.metadata
+    print(
+        "  Snapshots: %(total_snapshots)d | Tickers: %(tickers)d | "
+        "Settled: %(settled)d | Duration: %(duration_min).0f min" % meta
+    )
+    print(
+        "  Spot trades: %s"
+        % " | ".join("%s=%d" % (s, c) for s, c in meta.get("spot_trades", {}).items())
+    )
+    print("=" * 70)
+
+    results = []
+    for thr in thresholds:
+        adapter = _make_adapter(thr)
+        result = engine.run(feed, adapter, verbose=verbose)
+        results.append((thr, result, adapter))
+
+    # Print comparison table
+    print(
+        "\n%-25s %6s %6s %6s %6s %8s %8s"
+        % (
+            "Config",
+            "Sigs",
+            "Regime",
+            "Fills",
+            "Wins",
+            "WinRate",
+            "Net PnL",
+        )
+    )
+    print("-" * 70)
+    for thr, result, adapter in results:
+        label = "osc < %.1f" % thr if thr > 0 else "no filter"
+        # Use adapter's internal tracking for accuracy
+        wins = sum(1 for t in adapter.exit_details if t["net_pnl_cents"] > 0)
+        exits = len(adapter.exit_details)
+        net = sum(t["net_pnl_cents"] for t in adapter.exit_details)
+        wr = (wins / exits * 100) if exits else 0
+        print(
+            "%-25s %6d %6d %6d %6d %7.0f%% %+7dc"
+            % (
+                label,
+                adapter.signals_detected,
+                adapter.signals_filtered_regime,
+                exits,
+                wins,
+                wr,
+                net,
+            )
+        )
+    print("-" * 70)
+
+    # Print detailed trades for each run
+    for thr, result, adapter in results:
+        label = "osc < %.1f" % thr if thr > 0 else "no filter"
+        print("\n--- %s ---" % label)
+        print(adapter.trade_summary())
+
+    print()
+
+    # Validate on the first (baseline) result
+    if results:
+        _, first_result, _ = results[0]
+        _run_validation(args, first_result, feed=feed,
+                        adapter_factory=lambda: _make_adapter(0.0), engine=engine)
+
+
+def _backtest_crypto_scalp_chop(args: argparse.Namespace) -> None:
+    """Backtest crypto scalp chop strategy with pattern-based exits."""
+    from src.backtesting.engine import BacktestEngine, BacktestConfig
+    from src.backtesting.adapters.chop_adapter import (
+        ChopDataFeed,
+        ChopAdapter,
+    )
+    from strategies.crypto_scalp_chop.config import ChopConfig
+
+    db_path = getattr(args, "db", None)
+    if not db_path:
+        db_path = str(Path(__file__).parent / "data" / "btc_ob_48h.db")
 
     # Load config
-    if args.config:
-        config = Config.from_yaml(args.config)
-        set_config(config)
+    config_path = getattr(
+        args, "config", "strategies/configs/crypto_scalp_chop.yaml"
+    )
 
-    # Route to appropriate command
-    if args.command == "scan":
+    if Path(config_path).exists():
+        config = ChopConfig.from_yaml(config_path)
+    else:
+        config = ChopConfig()
+        print(f"Warning: Config not found at {config_path}, using defaults")
+
+    # Override with CLI args if provided
+    if hasattr(args, "spot_move"):
+        config.min_spot_move_usd = args.spot_move
+    if hasattr(args, "percentile"):
+        config.percentile_to_use = args.percentile
+    if hasattr(args, "signal_feed"):
+        config.signal_feed = args.signal_feed
+
+    verbose = getattr(args, "verbose", False)
+
+    feed = ChopDataFeed(
+        db_path=db_path,
+        lookback_sec=config.spot_lookback_sec,
+        regime_window_sec=60.0,
+    )
+
+    adapter = ChopAdapter(config)
+
+    engine_cfg = BacktestConfig(
+        initial_bankroll=args.bankroll,
+        cooldown_seconds=0,  # adapter handles cooldown
+    )
+    engine = BacktestEngine(engine_cfg)
+
+    print("=" * 70)
+    print("  CRYPTO SCALP CHOP BACKTEST — PATTERN-BASED EXITS")
+    print("=" * 70)
+    print(f"  DB: {db_path}")
+    print(f"  Signal feed: {config.signal_feed}")
+    print(f"  Spot move threshold: ${config.min_spot_move_usd:.0f}")
+    print(f"  Exit timing: {config.percentile_to_use} percentile")
+    print(f"  Early exit: {config.enable_early_exit} ({config.early_exit_threshold_pct:.0%})")
+    print(f"  Max hold: {config.max_hold_sec:.0f}s")
+    print(f"  Stop-loss: {config.stop_loss_cents}¢")
+    print(f"  Patterns: {config.patterns_file}")
+    print("=" * 70)
+    print()
+
+    result = engine.run(feed, adapter, verbose=verbose)
+
+    # Print results
+    m = result.metrics
+    print("\n" + "=" * 70)
+    print("  RESULTS")
+    print("=" * 70)
+    print(f"  Frames: {m.total_frames}")
+    print(f"  Signals: {m.total_signals}")
+    print(f"  Fills: {m.total_fills}")
+    if m.total_fills > 0:
+        print(f"  Wins: {m.winning_fills} ({m.win_rate_pct:.1f}%)")
+    print(f"  Net P&L: ${m.net_pnl:+.2f}")
+    print(f"  Return: {m.return_pct:+.1f}%")
+    if hasattr(m.portfolio, "sharpe_ratio"):
+        print(f"  Sharpe: {m.portfolio.sharpe_ratio:.2f}")
+    print(f"  Max drawdown: {m.max_drawdown_pct:.1f}%")
+
+    # Chop-specific metrics
+    metrics = adapter.get_metrics()
+    if "timing_rmse_ms" in metrics:
+        print()
+        print("  Timing Accuracy:")
+        print(f"    RMSE: {metrics['timing_rmse_ms']:.0f}ms")
+        print(f"    Predictions: {metrics['timing_predictions']}")
+        print(f"    Early exits: {metrics['early_exits']} ({metrics['early_exit_rate']:.1%})")
+
+    print("=" * 70)
+
+    # Print trade details
+    print("\n" + adapter.trade_summary())
+
+
+def _backtest_crypto_scalp_hmm_gbm(args: argparse.Namespace) -> None:
+    from src.backtesting.engine import BacktestEngine, BacktestConfig
+    from src.backtesting.adapters.scalp_adapter import CryptoScalpDataFeed
+    from src.backtesting.adapters.hmm_gbm_scalp_adapter import HMMGBMScalpAdapter
+
+    db_path = getattr(args, "db", None)
+    if not db_path:
+        db_path = str(Path(__file__).parent / "data" / "btc_ob_48h.db")
+
+    hmm_path = getattr(args, "hmm", "models/crypto_regime_hmm.pkl")
+    gbm_path = getattr(args, "gbm", "models/crypto_regime_gbm.txt")
+    cal_path = getattr(args, "calibration", "models/crypto_regime_cal.pkl")
+    gbm_threshold = getattr(args, "gbm_threshold", None)
+
+    spot_move = getattr(args, "spot_move", 10.0)
+    regime_window = getattr(args, "regime_window", 60.0)
+    lookback = getattr(args, "lookback", 5.0)
+    signal_feed = getattr(args, "signal_feed", "binance")
+    verbose = getattr(args, "verbose", False)
+
+    feed = CryptoScalpDataFeed(
+        db_path=db_path,
+        lookback_sec=lookback,
+        regime_window_sec=regime_window,
+    )
+
+    def _make_adapter(threshold: float) -> HMMGBMScalpAdapter:
+        return HMMGBMScalpAdapter(
+            hmm_path=hmm_path,
+            gbm_path=gbm_path,
+            cal_path=cal_path,
+            gbm_threshold=threshold,
+            signal_feed=signal_feed,
+            min_spot_move_usd=spot_move,
+            contracts_per_trade=5,
+            exit_delay_sec=20.0,
+            max_hold_sec=35.0,
+            cooldown_sec=15.0,
+            require_multi_exchange_confirm=True,
+            regime_osc_threshold=0.0,  # HMM handles regime filtering
+            slippage_cents=args.slippage,
+        )
+
+    engine_cfg = BacktestConfig(
+        initial_bankroll=args.bankroll,
+        cooldown_seconds=0,
+    )
+    engine = BacktestEngine(engine_cfg)
+
+    # Test multiple GBM thresholds
+    if gbm_threshold is not None:
+        thresholds = [gbm_threshold]
+    else:
+        thresholds = [0.15, 0.20, 0.25, 0.30]
+
+    print("=" * 70)
+    print("  CRYPTO SCALP BACKTEST — HMM → GBM PROFIT PREDICTION")
+    print("=" * 70)
+    print("  DB: %s" % db_path)
+    print("  HMM: %s" % hmm_path)
+    print("  GBM: %s" % gbm_path)
+    print(
+        "  Signal feed: %s | Spot move: $%.0f | Lookback: %.0fs"
+        % (signal_feed, spot_move, lookback)
+    )
+    print("  Regime window: %.0fs" % regime_window)
+    print("  GBM thresholds: %s" % ", ".join("%.2f" % t for t in thresholds))
+    meta = feed.metadata
+    print(
+        "  Snapshots: %(total_snapshots)d | Tickers: %(tickers)d | "
+        "Settled: %(settled)d | Duration: %(duration_min).0f min" % meta
+    )
+    print(
+        "  Spot trades: %s"
+        % " | ".join("%s=%d" % (s, c) for s, c in meta.get("spot_trades", {}).items())
+    )
+    print("=" * 70)
+
+    results = []
+    for thr in thresholds:
+        adapter = _make_adapter(thr)
+        result = engine.run(feed, adapter, verbose=verbose)
+        results.append((thr, result, adapter))
+
+    # Print comparison table
+    print(
+        "\n%-25s %6s %6s %6s %6s %8s %8s %8s"
+        % (
+            "Config",
+            "Sigs",
+            "GBM",
+            "Fills",
+            "Wins",
+            "WinRate",
+            "Net PnL",
+            "Avg P",
+        )
+    )
+    print("-" * 80)
+    for thr, result, adapter in results:
+        label = "P(profit) > %.2f" % thr
+        wins = sum(1 for t in adapter.exit_details if t["net_pnl_cents"] > 0)
+        exits = len(adapter.exit_details)
+        net = sum(t["net_pnl_cents"] for t in adapter.exit_details)
+        wr = (wins / exits * 100) if exits else 0
+        avg_p = adapter.summary_stats().get("gbm_mean_profit_prob", 0.0)
+        print(
+            "%-25s %6d %6d %6d %6d %7.0f%% %+7dc %7.3f"
+            % (
+                label,
+                adapter.signals_detected,
+                adapter.signals_filtered_gbm,
+                exits,
+                wins,
+                wr,
+                net,
+                avg_p,
+            )
+        )
+    print("-" * 80)
+
+    # Print detailed trades for each run
+    for thr, result, adapter in results:
+        label = "P(profit) > %.2f" % thr
+        print("\n--- %s ---" % label)
+        stats = adapter.summary_stats()
+        print("  GBM predictions: %d" % stats.get("gbm_predictions_count", 0))
+        print("  Mean P(profit): %.3f" % stats.get("gbm_mean_profit_prob", 0.0))
+        print("  Median P(profit): %.3f" % stats.get("gbm_median_profit_prob", 0.0))
+        print(adapter.trade_summary())
+
+    print()
+
+
+def _backtest_prediction_mm(args: argparse.Namespace) -> None:
+    from src.backtesting.engine import BacktestEngine, BacktestConfig
+    from src.backtesting.fill_model import MakerFillModel
+    from src.backtesting.adapters.mm_adapter import (
+        PredictionMMDataFeed,
+        PredictionMMAdapter,
+    )
+
+    db_path = getattr(args, "db", None)
+    if not db_path:
+        db_path = str(Path(__file__).parent / "data" / "btc_ob_48h.db")
+
+    verbose = getattr(args, "verbose", False)
+    vol = getattr(args, "vol", 0.50)
+    max_pos = getattr(args, "max_pos", 20)
+    spread = getattr(args, "spread", 0.03)
+
+    feed = PredictionMMDataFeed(
+        db_path=db_path,
+        sample_interval_sec=1.0,
+        min_ttx_sec=60.0,
+        max_ttx_sec=900.0,
+    )
+
+    adapter = PredictionMMAdapter(
+        base_half_spread_vol=spread,
+        min_spread_cents=2,
+        max_spread_cents=15,
+        base_volatility=vol,
+        max_position=max_pos,
+        max_skew_vol=0.12,
+        quote_size=5,
+        size_scale_factor=0.90,
+    )
+
+    # Pass settlement data to adapter so it can settle inventory in on_end()
+    adapter.set_settlements(feed.get_settlement())
+
+    engine_cfg = BacktestConfig(
+        initial_bankroll=args.bankroll,
+        cooldown_seconds=0,  # adapter manages quotes internally
+    )
+    engine = BacktestEngine(engine_cfg, fill_model=MakerFillModel())
+
+    print("=" * 60)
+    print("  PREDICTION MM BACKTEST")
+    print("=" * 60)
+    print(f"  DB: {db_path}")
+    meta = feed.metadata
+    for k, v in meta.items():
+        print(f"  {k}: {v}")
+    print()
+
+    result = engine.run(feed, adapter, verbose=verbose)
+    print(result.report())
+    print()
+    print("--- MM Details ---")
+    print(adapter.summary())
+    print()
+
+    def _make_mm_adapter():
+        a = PredictionMMAdapter(
+            base_half_spread_vol=spread, min_spread_cents=2, max_spread_cents=15,
+            base_volatility=vol, max_position=max_pos, max_skew_vol=0.12,
+            quote_size=5, size_scale_factor=0.90,
+        )
+        a.set_settlements(feed.get_settlement())
+        return a
+    _run_validation(args, result, feed=feed, adapter_factory=_make_mm_adapter, engine=engine)
+
+
+def _backtest_crypto_latency_legacy(args: argparse.Namespace) -> int:
+    """Original bespoke crypto-latency backtest (preserved for comparison)."""
+    from strategies.crypto_latency.backtest import (
+        DEFAULT_DB,
+        ValidationConfig,
+        run_validation_backtest,
+    )
+
+    db_path = Path(args.db) if args.db else DEFAULT_DB
+    config = ValidationConfig(
+        min_edge=args.edge,
+        slippage_cents=args.slippage,
+        fee_cents=args.fee,
+        vol=args.vol,
+        bankroll=args.bankroll,
+        use_spot_price=not args.use_avg,
+        min_spread_cents=args.min_spread,
+        max_gap_pct=args.max_gap / 100.0,
+        exit_ttx_sec=args.exit_ttx,
+        hold_to_expiry=args.hold,
+        one_entry_per_market=args.one_per_market,
+        cooldown_sec=args.cooldown,
+    )
+
+    run_validation_backtest(db_path, config)
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# Argument Parser
+# ---------------------------------------------------------------------------
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="main.py",
+        description="MrClean Trading CLI",
+    )
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Enable debug logging"
+    )
+    sub = parser.add_subparsers(dest="command")
+
+    # list-strategies
+    sub.add_parser("list-strategies", help="List registered strategies")
+
+    # show-config
+    sc = sub.add_parser("show-config", help="Show strategy configuration")
+    sc.add_argument("strategy", help="Strategy name")
+
+    # run
+    run = sub.add_parser("run", help="Run a strategy")
+    run.add_argument("strategy", help="Strategy name")
+    run.add_argument("--tickers", "-t", help="Comma-separated tickers")
+    run.add_argument(
+        "--dry-run", action="store_true", default=True, help="Dry run mode (default)"
+    )
+    run.add_argument("--live", action="store_true", help="Live trading mode")
+    run.add_argument("--config", "-c", help="Path to YAML config file")
+
+    # scan
+    scan = sub.add_parser("scan", help="Scan markets")
+    scan.add_argument("--series", "-s", help="Series ticker filter (e.g., KXNBAGAME)")
+    scan.add_argument("--min-volume", type=int, default=0, help="Minimum volume")
+    scan.add_argument(
+        "--max-spread", type=int, default=100, help="Maximum spread in cents"
+    )
+
+    # record
+    rec = sub.add_parser("record", help="Record market data")
+    rec.add_argument("ticker", help="Market ticker to record")
+    rec.add_argument(
+        "--duration", type=float, default=3600, help="Recording duration (seconds)"
+    )
+    rec.add_argument(
+        "--interval", type=float, default=2.0, help="Poll interval (seconds)"
+    )
+
+    # schedule
+    sub.add_parser("schedule", help="Run automated scheduler")
+
+    # monitor
+    sub.add_parser("monitor", help="Run system monitor")
+
+    # healthcheck
+    sub.add_parser("healthcheck", help="Run health checks")
+
+    # arb
+    sub.add_parser("arb", help="Arbitrage subsystem (delegates to arb CLI)")
+
+    # portfolio
+    portfolio = sub.add_parser("portfolio", help="Portfolio allocation commands")
+    portfolio_sub = portfolio.add_subparsers(dest="portfolio_command")
+
+    # portfolio status
+    portfolio_sub.add_parser("status", help="Show current portfolio allocations")
+
+    # portfolio rebalance
+    rebal = portfolio_sub.add_parser("rebalance", help="Force portfolio rebalance")
+    rebal.add_argument("--reason", default="manual", help="Rebalance reason")
+
+    # portfolio analyze
+    analyze = portfolio_sub.add_parser("analyze", help="Analyze portfolio performance")
+    analyze.add_argument("--days", type=int, default=30, help="Lookback days")
+    analyze.add_argument("--export", help="Export to CSV file")
+
+    # features
+    features = sub.add_parser("features", help="Manage institutional quant features")
+    features_sub = features.add_subparsers(dest="features_command")
+
+    # features status
+    features_sub.add_parser("status", help="Show status of all features")
+
+    # features enable
+    enable = features_sub.add_parser("enable", help="Enable a feature")
+    enable.add_argument("feature", help="Feature name (empirical-kelly, vpin-kill-switch, etc.)")
+    enable.add_argument("--dry-run", action="store_true", help="Show what would be done")
+
+    # features disable
+    disable = features_sub.add_parser("disable", help="Disable a feature")
+    disable.add_argument("feature", help="Feature name")
+    disable.add_argument("-y", "--yes", action="store_true", help="Skip confirmation")
+    disable.add_argument("--dry-run", action="store_true", help="Show what would be done")
+
+    # features validate
+    features_sub.add_parser("validate", help="Validate all enabled features")
+
+    # features quickstart
+    features_sub.add_parser("quickstart", help="Interactive feature setup wizard")
+
+    # backtest
+    bt = sub.add_parser(
+        "backtest",
+        help="Run backtest (nba-underdog, nba-underdog-grid, nba-mispricing, blowout, total-points, crypto-latency, prediction-mm)",
+    )
+    bt.add_argument("strategy", help="Strategy to backtest")
+    # Common args
+    bt.add_argument(
+        "--bankroll", type=float, default=100.0, help="Starting bankroll (default $100)"
+    )
+    bt.add_argument(
+        "--edge", type=float, default=0.10, help="Min edge to enter (default 0.10)"
+    )
+    bt.add_argument(
+        "--slippage", type=int, default=3, help="Slippage in cents (default 3)"
+    )
+    bt.add_argument(
+        "--fill-prob",
+        type=float,
+        default=1.0,
+        help="Fill probability 0-1 (default 1.0)",
+    )
+    bt.add_argument(
+        "--realism",
+        choices=["optimistic", "realistic", "pessimistic"],
+        default=None,
+        help="Backtest realism profile (optimistic=no friction, realistic=balanced, pessimistic=conservative). See docs/BACKTEST_REALISM_MODELS.md",
+    )
+    bt.add_argument("--recording", help="Path to game recording JSON (NBA strategies)")
+    # Crypto-latency specific
+    bt.add_argument("--db", help="Path to probe database (crypto-latency)")
+    bt.add_argument(
+        "--fee",
+        type=int,
+        default=0,
+        help="Flat fee override in cents (0 = Kalshi formula)",
+    )
+    bt.add_argument(
+        "--vol", type=float, default=0.30, help="Annualized volatility (default 0.30)"
+    )
+    bt.add_argument(
+        "--use-avg", action="store_true", help="Use avg_60s instead of raw spot_price"
+    )
+    bt.add_argument(
+        "--min-spread",
+        type=int,
+        default=3,
+        help="Min Kalshi spread to enter (default 3c)",
+    )
+    bt.add_argument(
+        "--max-gap",
+        type=float,
+        default=0.05,
+        help="Max spot-strike gap %% to enter (default 0.05)",
+    )
+    bt.add_argument(
+        "--exit-ttx",
+        type=int,
+        default=300,
+        help="Hard exit at this TTX in seconds (default 300)",
+    )
+    bt.add_argument(
+        "--hold", action="store_true", help="Hold to expiry (no early exit)"
+    )
+    bt.add_argument(
+        "--one-per-market", action="store_true", help="Only one entry per market"
+    )
+    bt.add_argument(
+        "--cooldown",
+        type=float,
+        default=60,
+        help="Seconds between exit and re-entry (default 60)",
+    )
+    # Intelligent exits (crypto-latency)
+    bt.add_argument(
+        "--intelligent-exits",
+        action="store_true",
+        help="Enable intelligent exit strategies (edge convergence, trailing stop, etc.)",
+    )
+    bt.add_argument(
+        "--edge-threshold",
+        type=float,
+        default=0.30,
+        help="Edge convergence threshold (exit at 30%% of original edge)",
+    )
+    bt.add_argument(
+        "--trail-activation",
+        type=float,
+        default=0.05,
+        help="Trailing stop activation (activate after 5c profit)",
+    )
+    bt.add_argument(
+        "--trail-distance",
+        type=float,
+        default=0.03,
+        help="Trailing stop distance (exit if 3c pullback from peak)",
+    )
+    bt.add_argument(
+        "--velocity-threshold",
+        type=float,
+        default=0.01,
+        help="Velocity exit threshold (exit if edge decaying >1c/sec)",
+    )
+    bt.add_argument(
+        "--spread-threshold",
+        type=int,
+        default=5,
+        help="Spread widening threshold (exit if spread >5c)",
+    )
+    bt.add_argument(
+        "--profit-target",
+        type=int,
+        default=None,
+        help="Profit target in cents (e.g., 10 = exit at +10c)",
+    )
+    bt.add_argument(
+        "--max-hold",
+        type=float,
+        default=60.0,
+        help="Max hold time in seconds (safety net)",
+    )
+    bt.add_argument(
+        "--fixed-exit",
+        type=float,
+        default=15.0,
+        help="Fixed exit delay if intelligent exits disabled (default: 15s)",
+    )
+    bt.add_argument(
+        "--legacy",
+        action="store_true",
+        help="Use legacy bespoke backtest engine (crypto-latency only)",
+    )
+    # Prediction-MM specific
+    bt.add_argument(
+        "--max-pos",
+        type=int,
+        default=20,
+        help="Max position per market (prediction-mm, default 20)",
+    )
+    bt.add_argument(
+        "--spread",
+        type=float,
+        default=0.03,
+        help="Base half-spread in vol points (prediction-mm, default 0.03)",
+    )
+    # Crypto-scalp specific
+    bt.add_argument(
+        "--spot-move",
+        type=float,
+        default=10.0,
+        help="Min spot move USD (scalp, default 10)",
+    )
+    bt.add_argument(
+        "--regime-threshold",
+        type=float,
+        default=None,
+        help="Regime osc threshold (scalp, default: sweep)",
+    )
+    bt.add_argument(
+        "--regime-window",
+        type=float,
+        default=60.0,
+        help="Regime window seconds (scalp, default 60)",
+    )
+    bt.add_argument(
+        "--lookback",
+        type=float,
+        default=5.0,
+        help="Spot lookback seconds (scalp, default 5)",
+    )
+    bt.add_argument(
+        "--signal-feed",
+        type=str,
+        default="binance",
+        help="Signal feed: binance/coinbase/kraken/all (scalp)",
+    )
+    # HMM → GBM specific
+    bt.add_argument(
+        "--hmm",
+        type=str,
+        default="models/crypto_regime_hmm.pkl",
+        help="Path to HMM model (crypto-scalp-hmm-gbm)",
+    )
+    bt.add_argument(
+        "--gbm",
+        type=str,
+        default="models/crypto_regime_gbm.txt",
+        help="Path to GBM model (crypto-scalp-hmm-gbm)",
+    )
+    bt.add_argument(
+        "--calibration",
+        type=str,
+        default="models/crypto_regime_cal.pkl",
+        help="Path to calibration model (crypto-scalp-hmm-gbm)",
+    )
+    bt.add_argument(
+        "--gbm-threshold",
+        type=float,
+        default=None,
+        help="GBM P(profit) threshold (crypto-scalp-hmm-gbm, default: sweep)",
+    )
+    # NBA underdog specific
+    bt.add_argument(
+        "--csv",
+        help="Path to historical candlestick CSV (nba-underdog)",
+    )
+    bt.add_argument(
+        "--underdog-min",
+        type=int,
+        default=15,
+        help="Min underdog price in cents (default 15)",
+    )
+    bt.add_argument(
+        "--underdog-max",
+        type=int,
+        default=20,
+        help="Max underdog price in cents (default 20)",
+    )
+    bt.add_argument(
+        "--underdog-stop-loss",
+        type=int,
+        default=22,
+        help="Stop loss in cents (default 22, 0=disabled)",
+    )
+    bt.add_argument(
+        "--underdog-size",
+        type=int,
+        default=10,
+        help="Contracts per entry (default 10)",
+    )
+    bt.add_argument(
+        "--min-minutes",
+        type=float,
+        default=0.0,
+        help="Min minutes before close to enter (default 0)",
+    )
+    bt.add_argument(
+        "--max-minutes",
+        type=float,
+        default=999.0,
+        help="Max minutes before close to enter (default 999)",
+    )
+    bt.add_argument(
+        "--sample-interval",
+        type=float,
+        default=30.0,
+        help="Data feed sample interval in seconds (default 30)",
+    )
+    # Validation flags
+    bt.add_argument(
+        "--validate",
+        action="store_true",
+        help="Run full validation suite (extended + MC + bootstrap + permutation)",
+    )
+    bt.add_argument(
+        "--monte-carlo",
+        action="store_true",
+        help="Run Monte Carlo simulation",
+    )
+    bt.add_argument(
+        "--bootstrap",
+        action="store_true",
+        help="Run bootstrap confidence intervals",
+    )
+    bt.add_argument(
+        "--permutation",
+        action="store_true",
+        help="Run permutation test",
+    )
+    bt.add_argument(
+        "--walk-forward",
+        action="store_true",
+        help="Run walk-forward analysis",
+    )
+    bt.add_argument(
+        "--mc-sims",
+        type=int,
+        default=10000,
+        help="Monte Carlo iterations (default 10000)",
+    )
+    bt.add_argument(
+        "--mc-mode",
+        type=str,
+        default="sequence",
+        choices=["sequence", "resample", "null"],
+        help="Monte Carlo mode (default sequence)",
+    )
+    bt.add_argument(
+        "--bs-samples",
+        type=int,
+        default=10000,
+        help="Bootstrap samples (default 10000)",
+    )
+    bt.add_argument(
+        "--perm-n",
+        type=int,
+        default=10000,
+        help="Permutations (default 10000)",
+    )
+    bt.add_argument(
+        "--wf-splits",
+        type=int,
+        default=5,
+        help="Walk-forward folds (default 5)",
+    )
+    bt.add_argument(
+        "--wf-train-pct",
+        type=float,
+        default=0.70,
+        help="Walk-forward train fraction (default 0.70)",
+    )
+    bt.add_argument(
+        "--wf-expanding",
+        action="store_true",
+        help="Use expanding window (default: sliding)",
+    )
+    bt.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Random seed for reproducibility",
+    )
+
+    return parser
+
+
+def cmd_features(args: argparse.Namespace) -> int:
+    """Handle features subcommands."""
+    from core.feature_commands import (
+        cmd_features_status,
+        cmd_features_enable,
+        cmd_features_disable,
+        cmd_features_validate,
+        cmd_features_quickstart,
+    )
+
+    subcmd = getattr(args, "features_command", None)
+    if subcmd == "status":
+        return cmd_features_status(args)
+    elif subcmd == "enable":
+        return cmd_features_enable(args)
+    elif subcmd == "disable":
+        return cmd_features_disable(args)
+    elif subcmd == "validate":
+        return cmd_features_validate(args)
+    elif subcmd == "quickstart":
+        return cmd_features_quickstart(args)
+    else:
+        print("Usage: python main.py features {status|enable|disable|validate|quickstart}")
+        return 1
+
+
+def cmd_portfolio(args: argparse.Namespace) -> int:
+    """Portfolio allocation commands."""
+    import yaml
+    from core.portfolio import PortfolioManager, PerformanceTracker, PortfolioConfig
+
+    # Load config
+    config_path = Path(__file__).parent / "config" / "portfolio_config.yaml"
+    if not config_path.exists():
+        print(f"Error: Portfolio config not found at {config_path}")
+        return 1
+
+    with open(config_path) as f:
+        config_dict = yaml.safe_load(f).get("portfolio", {})
+
+    # Parse config
+    portfolio_config = PortfolioConfig(
+        enabled=config_dict.get("enabled", False),
+        rebalance_interval_sec=config_dict.get("rebalance_interval_sec", 86400),
+        rebalance_on_pnl_change_pct=config_dict.get("rebalance_on_pnl_change_pct", 0.20),
+        rebalance_min_interval_sec=config_dict.get("rebalance_min_interval_sec", 43200),
+        lookback_days=config_dict.get("lookback_days", 30),
+        correlation_shrinkage=config_dict.get("correlation_shrinkage", 0.70),
+        prior_correlations=config_dict.get("prior_correlations", {}),
+        default_correlation=config_dict.get("default_correlation", 0.1),
+        market_overlap_threshold=config_dict.get("market_overlap_threshold", 0.20),
+        market_overlap_correlation=config_dict.get("market_overlap_correlation", 0.5),
+        trade_db_path=config_dict.get("trade_db_path", "data/portfolio_trades.db"),
+    )
+
+    # Parse allocation config
+    alloc_config = config_dict.get("allocation", {})
+    from core.portfolio.types import AllocationConfig
+    portfolio_config.allocation = AllocationConfig(
+        kelly_fraction=alloc_config.get("kelly_fraction", 0.5),
+        max_allocation_per_strategy=alloc_config.get("max_allocation_per_strategy", 0.25),
+        max_total_allocation=alloc_config.get("max_total_allocation", 0.80),
+        min_allocation_threshold=alloc_config.get("min_allocation_threshold", 0.05),
+        min_trades_per_strategy=alloc_config.get("min_trades_per_strategy", 10),
+        ridge_regularization=alloc_config.get("ridge_regularization", 1e-6),
+    )
+
+    if hasattr(args, "portfolio_command"):
+        if args.portfolio_command == "status":
+            return _portfolio_status(portfolio_config)
+        elif args.portfolio_command == "rebalance":
+            return _portfolio_rebalance(portfolio_config, args.reason)
+        elif args.portfolio_command == "analyze":
+            return _portfolio_analyze(portfolio_config, args.days, args.export)
+
+    print("Usage: main.py portfolio {status|rebalance|analyze}")
+    return 1
+
+
+def _portfolio_status(config: "PortfolioConfig") -> int:
+    """Show current portfolio status."""
+    from core.portfolio import PerformanceTracker
+
+    tracker = PerformanceTracker(config.trade_db_path)
+    strategy_names = tracker.get_all_strategy_names()
+
+    if not strategy_names:
+        print("No strategies with recorded trades")
+        return 0
+
+    print("=" * 80)
+    print("PORTFOLIO STATUS")
+    print("=" * 80)
+    print(f"Database: {config.trade_db_path}")
+    print(f"Strategies: {len(strategy_names)}")
+    print()
+
+    print("Strategy Performance:")
+    print("-" * 80)
+
+    for strategy_name in strategy_names:
+        stats = tracker.get_strategy_stats(strategy_name, config.lookback_days)
+
+        if not stats:
+            print(f"{strategy_name:30s} No settled trades")
+            continue
+
+        print(
+            f"{strategy_name:30s} "
+            f"PnL=${stats.total_pnl:8.2f}  "
+            f"trades={stats.num_trades:4d}  "
+            f"edge=${stats.edge:6.2f}  "
+            f"sharpe={stats.sharpe_ratio:5.2f}  "
+            f"win%={stats.win_rate*100:5.1f}"
+        )
+
+    print("=" * 80)
+    return 0
+
+
+def _portfolio_rebalance(config: "PortfolioConfig", reason: str) -> int:
+    """Force portfolio rebalance."""
+    import asyncio
+    from core.portfolio import PortfolioManager
+
+    # Mock bankroll (would be read from config in production)
+    total_bankroll = 10000.0
+
+    manager = PortfolioManager(config, total_bankroll)
+
+    # Run rebalance
+    asyncio.run(manager.rebalance(reason=reason))
+
+    return 0
+
+
+def _portfolio_analyze(config: "PortfolioConfig", days: int, export: Optional[str]) -> int:
+    """Analyze portfolio performance."""
+    from core.portfolio import PerformanceTracker, CorrelationEstimator
+
+    tracker = PerformanceTracker(config.trade_db_path)
+    strategy_names = tracker.get_all_strategy_names()
+
+    if not strategy_names:
+        print("No strategies with recorded trades")
+        return 0
+
+    # Get performance stats
+    print("=" * 80)
+    print(f"PORTFOLIO ANALYSIS (Last {days} days)")
+    print("=" * 80)
+    print()
+
+    strategy_stats = {}
+    for strategy_name in strategy_names:
+        stats = tracker.get_strategy_stats(strategy_name, lookback_days=days)
+        if stats and stats.num_trades >= config.allocation.min_trades_per_strategy:
+            strategy_stats[strategy_name] = stats
+
+    if not strategy_stats:
+        print("No strategies with sufficient data")
+        return 0
+
+    # Display individual stats
+    print("Individual Strategy Performance:")
+    print("-" * 80)
+    print(f"{'Strategy':<30s} {'Total PnL':>10s} {'Trades':>7s} {'Edge':>8s} {'Sharpe':>7s} {'Win%':>6s}")
+    print("-" * 80)
+
+    for name, stats in sorted(strategy_stats.items()):
+        print(
+            f"{name:<30s} "
+            f"${stats.total_pnl:9.2f} "
+            f"{stats.num_trades:7d} "
+            f"${stats.edge:7.2f} "
+            f"{stats.sharpe_ratio:7.2f} "
+            f"{stats.win_rate*100:5.1f}%"
+        )
+
+    print()
+
+    # Calculate correlation matrix
+    if len(strategy_stats) > 1:
+        estimator = CorrelationEstimator(config)
+        active_names = sorted(strategy_stats.keys())
+
+        strategy_trades = tracker.get_trades_for_correlation(active_names, lookback_days=days)
+        corr_matrix = estimator.estimate_correlation_matrix(strategy_trades)
+
+        print("Correlation Matrix:")
+        print("-" * 80)
+
+        # Header
+        print(f"{'':>30s}", end="")
+        for name in active_names:
+            print(f"{name[:8]:>10s}", end="")
+        print()
+
+        # Rows
+        for i, name_i in enumerate(active_names):
+            print(f"{name_i:<30s}", end="")
+            for j in range(len(active_names)):
+                print(f"{corr_matrix[i, j]:10.2f}", end="")
+            print()
+
+        print()
+
+    # Export if requested
+    if export:
+        import csv
+        with open(export, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["strategy", "total_pnl", "num_trades", "edge", "variance", "std_dev", "sharpe", "win_rate"])
+            for name, stats in sorted(strategy_stats.items()):
+                writer.writerow([
+                    name,
+                    stats.total_pnl,
+                    stats.num_trades,
+                    stats.edge,
+                    stats.variance,
+                    stats.std_dev,
+                    stats.sharpe_ratio,
+                    stats.win_rate,
+                ])
+        print(f"✓ Exported to {export}")
+        print()
+
+    print("=" * 80)
+    return 0
+
+
+def main() -> int:
+    _register_builtins()
+
+    parser = build_parser()
+    args = parser.parse_args()
+
+    if args.verbose:
+        logging.basicConfig(
+            level=logging.DEBUG, format="%(asctime)s %(name)s %(levelname)s %(message)s"
+        )
+    else:
+        logging.basicConfig(
+            level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
+        )
+
+    if args.command == "list-strategies":
+        return cmd_list_strategies(args)
+    elif args.command == "show-config":
+        return cmd_show_config(args)
+    elif args.command == "run":
+        if args.live:
+            args.dry_run = False
+        return cmd_run(args)
+    elif args.command == "scan":
         return cmd_scan(args)
-    elif args.command == "log":
-        return cmd_log(args)
-    elif args.command == "analyze":
-        return cmd_analyze(args)
+    elif args.command == "record":
+        return cmd_record(args)
     elif args.command == "schedule":
         return cmd_schedule(args)
     elif args.command == "monitor":
         return cmd_monitor(args)
     elif args.command == "healthcheck":
         return cmd_healthcheck(args)
-    elif args.command == "pipeline":
-        return cmd_pipeline(args)
-    elif args.command == "run-simulation":
-        return cmd_run_simulation(args)
-    elif args.command == "run-single":
-        return cmd_run_single(args)
-    elif args.command == "run-multi":
-        return cmd_run_multi(args)
+    elif args.command == "arb":
+        return cmd_arb(args)
+    elif args.command == "portfolio":
+        return cmd_portfolio(args)
+    elif args.command == "features":
+        return cmd_features(args)
     elif args.command == "backtest":
         return cmd_backtest(args)
-    elif args.command == "nba-record":
-        return cmd_nba_record(args)
     else:
         parser.print_help()
         return 0

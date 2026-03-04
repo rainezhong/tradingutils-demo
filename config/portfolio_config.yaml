@@ -1,0 +1,37 @@
+portfolio:
+  enabled: false
+  rebalance_interval_sec: 86400
+  rebalance_on_pnl_change_pct: 0.2
+  rebalance_min_interval_sec: 43200
+  allocation:
+    kelly_fraction: 0.5
+    max_allocation_per_strategy: 0.25
+    max_total_allocation: 0.8
+    min_allocation_threshold: 0.05
+    min_trades_per_strategy: 10
+    ridge_regularization: 1.0e-06
+    use_empirical_kelly: true
+    empirical_kelly_simulations: 500
+    empirical_kelly_seed: null
+  lookback_days: 30
+  correlation_shrinkage: 0.7
+  default_correlation: 0.1
+  market_overlap_threshold: 0.2
+  market_overlap_correlation: 0.5
+  prior_correlations:
+    nba-underdog:nba-mispricing: 0.4
+    nba-mispricing:nba-fade-momentum: 0.4
+    nba-underdog:nba-fade-momentum: 0.3
+    crypto-latency:crypto-scalp: 0.5
+    crypto-latency:crypto-latency-v2: 0.8
+    nba-latency:nba-mispricing: 0.3
+  # Copula settings (tail dependence modeling)
+  # "gaussian": standard correlation (zero tail dependence) - CURRENT DEFAULT
+  # "student-t": models tail dependence (extreme events cluster more than correlation suggests)
+  copula_type: gaussian  # "gaussian" | "student-t"
+  copula_df: null  # Degrees of freedom for student-t (null = auto-estimate from data)
+  # Recommended: copula_type: student-t, copula_df: 5.0 for crypto/election strategies
+  trade_db_path: data/portfolio_trades.db
+use_empirical_kelly: true
+empirical_kelly_simulations: 500
+kelly_fraction: 0.5

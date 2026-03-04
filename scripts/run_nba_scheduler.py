@@ -26,7 +26,7 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.automation.nba_scheduler import NBAGameScheduler
+from core.automation.nba_scheduler import NBAGameScheduler
 
 
 def main():
@@ -70,7 +70,8 @@ def main():
     )
 
     parser.add_argument(
-        "-v", "--verbose",
+        "-v",
+        "--verbose",
         action="store_true",
         help="Enable verbose output",
     )
@@ -93,7 +94,9 @@ def main():
         print(f"Started {started} new recorder(s)")
 
         status = scheduler.get_status()
-        print(f"Active: {status['active_count']}, Completed today: {status['completed_count']}")
+        print(
+            f"Active: {status['active_count']}, Completed today: {status['completed_count']}"
+        )
 
         for game in status["active_games"]:
             print(f"  Recording: {game['matchup']} ({game['frames']} frames)")

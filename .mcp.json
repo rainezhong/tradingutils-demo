@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "research": {
+      "command": "/Users/raine/tradingutils/mcp_servers/.venv/bin/python3",
+      "args": ["/Users/raine/tradingutils/mcp_servers/research_server.py"],
+      "env": {
+        "RESEARCH_PYTHON": "python3"
+      }
+    }
+  }
+}

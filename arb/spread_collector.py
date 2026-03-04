@@ -24,13 +24,11 @@ for row in history:
 
 import sqlite3
 import threading
-import time
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional, Tuple, Dict, Any
 
-from src.core.trading_state import get_trading_state
+from core.trading_state import get_trading_state
 
 from .kalshi_scanner import (
     KalshiSpreadScanner,
@@ -122,24 +120,29 @@ class SpreadDatabase:
 
         pair_id = f"{pair.market_a.ticker}:{pair.market_b.ticker}"
 
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO spread_pairs (pair_id, ticker_a, ticker_b, event_ticker, event_title, match_type)
             VALUES (?, ?, ?, ?, ?, ?)
             ON CONFLICT(ticker_a, ticker_b) DO UPDATE SET
                 event_title = excluded.event_title,
                 match_type = excluded.match_type
-        """, (
-            pair_id,
-            pair.market_a.ticker,
-            pair.market_b.ticker,
-            pair.event_ticker,
-            pair.event_title,
-            pair.match_type,
-        ))
+        """,
+            (
+                pair_id,
+                pair.market_a.ticker,
+                pair.market_b.ticker,
+                pair.event_ticker,
+                pair.event_title,
+                pair.match_type,
+            ),
+        )
         conn.commit()
         return pair_id
 
-    def add_snapshot(self, pair: ComplementaryPair, timestamp: Optional[str] = None) -> int:
+    def add_snapshot(
+        self, pair: ComplementaryPair, timestamp: Optional[str] = None
+    ) -> int:
         """Store a spread snapshot. Returns snapshot ID."""
         conn = self._get_conn()
         cursor = conn.cursor()
@@ -156,7 +159,8 @@ class SpreadDatabase:
         routing_a = a_yes - b_no if b_no else None  # A exposure cheaper via B NO?
         routing_b = b_yes - a_no if a_no else None  # B exposure cheaper via A NO?
 
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO spread_snapshots (
                 pair_id, timestamp,
                 a_yes_bid, a_yes_ask, a_no_bid, a_no_ask,
@@ -165,16 +169,25 @@ class SpreadDatabase:
                 routing_edge_a, routing_edge_b
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            pair_id, ts,
-            pair.market_a.yes_bid, pair.market_a.yes_ask,
-            pair.market_a.no_bid, pair.market_a.no_ask,
-            pair.market_b.yes_bid, pair.market_b.yes_ask,
-            pair.market_b.no_bid, pair.market_b.no_ask,
-            pair.combined_yes_ask, pair.combined_yes_bid,
-            pair.dutch_book_edge,
-            routing_a, routing_b,
-        ))
+        """,
+            (
+                pair_id,
+                ts,
+                pair.market_a.yes_bid,
+                pair.market_a.yes_ask,
+                pair.market_a.no_bid,
+                pair.market_a.no_ask,
+                pair.market_b.yes_bid,
+                pair.market_b.yes_ask,
+                pair.market_b.no_bid,
+                pair.market_b.no_ask,
+                pair.combined_yes_ask,
+                pair.combined_yes_bid,
+                pair.dutch_book_edge,
+                routing_a,
+                routing_b,
+            ),
+        )
         conn.commit()
         return cursor.lastrowid
 
@@ -353,7 +366,9 @@ class SpreadCollector:
             try:
                 count = self.collect_once()
                 ts = datetime.now().strftime("%H:%M:%S")
-                print(f"[{ts}] Collected {count} snapshots (total: {self.snapshots_collected})")
+                print(
+                    f"[{ts}] Collected {count} snapshots (total: {self.snapshots_collected})"
+                )
             except Exception as e:
                 self.errors += 1
                 print(f"Collection error: {e}")
@@ -387,7 +402,9 @@ class SpreadCollector:
         self._stop_event.set()
         if self._thread:
             self._thread.join(timeout=5.0)
-        print(f"Stopped. Collected {self.snapshots_collected} snapshots, {self.errors} errors")
+        print(
+            f"Stopped. Collected {self.snapshots_collected} snapshots, {self.errors} errors"
+        )
 
     def get_stats(self) -> Dict[str, Any]:
         """Get collector statistics."""
@@ -396,11 +413,14 @@ class SpreadCollector:
             **db_stats,
             "snapshots_this_session": self.snapshots_collected,
             "errors_this_session": self.errors,
-            "last_collection": self.last_collection_time.isoformat() if self.last_collection_time else None,
+            "last_collection": self.last_collection_time.isoformat()
+            if self.last_collection_time
+            else None,
         }
 
 
 # Convenience functions
+
 
 def load_spread_history(
     db_path: str = "data/spreads.db",

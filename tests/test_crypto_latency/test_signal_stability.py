@@ -4,9 +4,9 @@ import pytest
 import time
 from datetime import datetime, timedelta
 
-from src.strategies.crypto_latency.config import CryptoLatencyConfig
-from src.strategies.crypto_latency.detector import LatencyDetector, OpportunityType
-from src.strategies.crypto_latency.market_scanner import CryptoMarket
+from strategies.crypto_latency.config import CryptoLatencyConfig
+from strategies.crypto_latency.detector import LatencyDetector, OpportunityType
+from strategies.crypto_latency.market_scanner import CryptoMarket
 
 
 @pytest.fixture

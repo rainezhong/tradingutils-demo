@@ -8,10 +8,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from src.core import Config, MarketDatabase, Market, Snapshot
-from src.automation.scheduler import MarketMakerScheduler
-from src.automation.monitor import SystemMonitor
-from src.automation.healthcheck import HealthCheck, HealthStatus
-from src.automation.alerter import Alerter, Alert
+from core.automation.scheduler import MarketMakerScheduler
+from core.automation.monitor import SystemMonitor
+from core.automation.healthcheck import HealthCheck, HealthStatus
+from core.automation.alerter import Alerter, Alert
 
 
 @pytest.fixture
@@ -78,7 +78,9 @@ class TestHealthCheck:
         assert ok is False
         assert "not found" in error.lower()
 
-    def test_check_recent_snapshot_success(self, temp_db, sample_market, sample_snapshot):
+    def test_check_recent_snapshot_success(
+        self, temp_db, sample_market, sample_snapshot
+    ):
         """Test recent snapshot check passes with fresh data."""
         db, config = temp_db
         db.upsert_market(sample_market)
@@ -353,7 +355,9 @@ class TestSystemMonitor:
         assert last_run is None
         monitor.close()
 
-    def test_display_returns_metrics(self, temp_db, sample_market, sample_snapshot, capsys):
+    def test_display_returns_metrics(
+        self, temp_db, sample_market, sample_snapshot, capsys
+    ):
         """Test display returns all metrics."""
         db, config = temp_db
         db.upsert_market(sample_market)
@@ -417,9 +421,11 @@ class TestMarketMakerScheduler:
 
     def test_run_once_invalid_job(self):
         """Test run_once raises error for invalid job name."""
-        with patch('src.automation.scheduler.Scanner'), \
-             patch('src.automation.scheduler.Logger'), \
-             patch('src.automation.scheduler.get_config') as mock_config:
+        with (
+            patch("core.automation.scheduler.Scanner"),
+            patch("core.automation.scheduler.Logger"),
+            patch("core.automation.scheduler.get_config") as mock_config,
+        ):
             mock_config.return_value = Config()
 
             scheduler = MarketMakerScheduler.__new__(MarketMakerScheduler)
@@ -433,9 +439,11 @@ class TestMarketMakerScheduler:
 
     def test_run_once_valid_job(self):
         """Test run_once executes valid job."""
-        with patch('src.automation.scheduler.Scanner'), \
-             patch('src.automation.scheduler.Logger'), \
-             patch('src.automation.scheduler.get_config') as mock_config:
+        with (
+            patch("core.automation.scheduler.Scanner"),
+            patch("core.automation.scheduler.Logger"),
+            patch("core.automation.scheduler.get_config") as mock_config,
+        ):
             mock_config.return_value = Config()
 
             scheduler = MarketMakerScheduler.__new__(MarketMakerScheduler)
@@ -452,10 +460,11 @@ class TestMarketMakerScheduler:
 
     def test_cleanup(self):
         """Test cleanup closes resources."""
-        with patch('src.automation.scheduler.Scanner'), \
-             patch('src.automation.scheduler.Logger'), \
-             patch('src.automation.scheduler.schedule') as mock_schedule:
-
+        with (
+            patch("core.automation.scheduler.Scanner"),
+            patch("core.automation.scheduler.Logger"),
+            patch("core.automation.scheduler.schedule") as mock_schedule,
+        ):
             scheduler = MarketMakerScheduler.__new__(MarketMakerScheduler)
             scheduler.scanner = MagicMock()
             scheduler.data_logger = MagicMock()

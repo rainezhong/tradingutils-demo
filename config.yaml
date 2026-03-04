@@ -1,0 +1,26 @@
+# Kalshi Market Data Configuration
+
+# Database settings
+db_path: "data/markets.db"
+
+# API settings
+api_base_url: "https://api.elections.kalshi.com/trade-api/v2"
+api_timeout: 30
+api_max_retries: 5  # Increased for rate limit recovery
+
+# Authentication (optional - enables higher rate limits)
+# Get your API key from: https://kalshi.com/account/profile
+api_key_id: "002fecc1-1890-4c74-bba1-978443cfbe48"
+api_private_key_path: "kalshi.key"
+
+# Rate limiting - conservative to avoid 429 errors
+rate_limits:
+  requests_per_second: 10
+  requests_per_minute: 500
+
+# Data collection settings
+min_volume: 0  # Lowered from 1000 - filter by liquidity instead
+snapshot_interval_seconds: 60
+
+# Logging
+log_level: "INFO"

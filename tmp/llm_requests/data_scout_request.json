@@ -1,0 +1,973 @@
+{
+  "task": "generate_analysis_plans",
+  "timestamp": "2026-02-27T23:18:27.522079",
+  "data_sources": [
+    {
+      "path": "data/btc_backtest.db",
+      "name": "btc_backtest",
+      "description": "Database with tables: kraken_ohlc_1m, kalshi_market_history",
+      "tables": [
+        "kraken_ohlc_1m",
+        "kalshi_market_history"
+      ],
+      "row_count": 0,
+      "date_range": null,
+      "sample_data": {
+        "table": "kraken_ohlc_1m",
+        "columns": [
+          "timestamp_s",
+          "open",
+          "high",
+          "low",
+          "close",
+          "vwap",
+          "volume",
+          "trade_count"
+        ],
+        "sample_rows": []
+      }
+    },
+    {
+      "path": "data/portfolio_trades.db",
+      "name": "portfolio_trades",
+      "description": "Trading history and performance tracking",
+      "tables": [
+        "strategy_trades",
+        "sqlite_sequence",
+        "strategy_performance"
+      ],
+      "row_count": 7,
+      "date_range": {
+        "start": "1771400843.050559",
+        "end": "1771405433.193521"
+      },
+      "sample_data": {
+        "table": "strategy_trades",
+        "columns": [
+          "id",
+          "strategy_name",
+          "ticker",
+          "timestamp",
+          "side",
+          "price",
+          "size",
+          "pnl",
+          "settled_at"
+        ],
+        "sample_rows": [
+          {
+            "id": 1,
+            "strategy_name": "crypto-latency",
+            "ticker": "KXBTC15M-26FEB180300-00",
+            "timestamp": 1771400843.050559,
+            "side": "buy",
+            "price": 0.0064,
+            "size": 78,
+            "pnl": 0.2808,
+            "settled_at": 1772230593.672395
+          },
+          {
+            "id": 2,
+            "strategy_name": "crypto-latency",
+            "ticker": "KXBTC15M-26FEB180315-15",
+            "timestamp": 1771401883.429951,
+            "side": "buy",
+            "price": 0.0060999999999999995,
+            "size": 81,
+            "pnl": 0.3159,
+            "settled_at": 1772230593.672399
+          },
+          {
+            "id": 3,
+            "strategy_name": "crypto-latency",
+            "ticker": "KXBTC15M-26FEB180415-15",
+            "timestamp": 1771405433.193521,
+            "side": "buy",
+            "price": 0.0031000000000000003,
+            "size": 64,
+            "pnl": 0.4416,
+            "settled_at": 1772230593.6724
+          }
+        ]
+      }
+    },
+    {
+      "path": "data/probe_ncaab.db",
+      "name": "probe_ncaab",
+      "description": "Database with tables: kalshi_snapshots, sqlite_sequence, truth_readings",
+      "tables": [
+        "kalshi_snapshots",
+        "sqlite_sequence",
+        "truth_readings",
+        "market_settlements",
+        "espn_game_states"
+      ],
+      "row_count": 2564704,
+      "date_range": {
+        "start": "1771797163.6854248",
+        "end": "1772234295.5430348"
+      },
+      "sample_data": {
+        "table": "kalshi_snapshots",
+        "columns": [
+          "id",
+          "ts",
+          "ticker",
+          "yes_bid",
+          "yes_ask",
+          "yes_mid",
+          "strike",
+          "close_time",
+          "seconds_to_close",
+          "volume",
+          "open_interest"
+        ],
+        "sample_rows": [
+          {
+            "id": 1,
+            "ts": 1771797163.6854248,
+            "ticker": "KXNCAAMBGAME-26FEB24ASUTCU-TCU",
+            "yes_bid": 64,
+            "yes_ask": 75,
+            "yes_mid": 69.5,
+            "strike": null,
+            "close_time": "2026-03-11T02:00:00Z",
+            "seconds_to_close": 1397236.228802,
+            "volume": 49,
+            "open_interest": 40
+          },
+          {
+            "id": 2,
+            "ts": 1771797163.6854248,
+            "ticker": "KXNCAAMBGAME-26FEB24ASUTCU-ASU",
+            "yes_bid": 33,
+            "yes_ask": 44,
+            "yes_mid": 38.5,
+            "strike": null,
+            "close_time": "2026-03-11T02:00:00Z",
+            "seconds_to_close": 1397236.139453,
+            "volume": 5,
+            "open_interest": 4
+          },
+          {
+            "id": 3,
+            "ts": 1771797163.6854248,
+            "ticker": "KXNCAAMBGAME-26FEB24MIAFSU-MIA",
+            "yes_bid": 57,
+            "yes_ask": 60,
+            "yes_mid": 58.5,
+            "strike": null,
+            "close_time": "2026-03-11T02:00:00Z",
+            "seconds_to_close": 1397236.053543,
+            "volume": 145,
+            "open_interest": 131
+          }
+        ]
+      }
+    },
+    {
+      "path": "data/probe_nba.db",
+      "name": "probe_nba",
+      "description": "Database with tables: kalshi_snapshots, sqlite_sequence, truth_readings",
+      "tables": [
+        "kalshi_snapshots",
+        "sqlite_sequence",
+        "truth_readings",
+        "market_settlements",
+        "espn_game_states"
+      ],
+      "row_count": 2515530,
+      "date_range": {
+        "start": "1771797059.312978",
+        "end": "1772234296.232963"
+      },
+      "sample_data": {
+        "table": "kalshi_snapshots",
+        "columns": [
+          "id",
+          "ts",
+          "ticker",
+          "yes_bid",
+          "yes_ask",
+          "yes_mid",
+          "strike",
+          "close_time",
+          "seconds_to_close",
+          "volume",
+          "open_interest"
+        ],
+        "sample_rows": [
+          {
+            "id": 1,
+            "ts": 1771797059.312978,
+            "ticker": "KXNBAGAME-26FEB24MIAMIL-MIL",
+            "yes_bid": 38,
+            "yes_ask": 40,
+            "yes_mid": 39.0,
+            "strike": null,
+            "close_time": "2026-03-11T01:00:00Z",
+            "seconds_to_close": 1393740.604124,
+            "volume": 101,
+            "open_interest": 101
+          },
+          {
+            "id": 2,
+            "ts": 1771797059.312978,
+            "ticker": "KXNBAGAME-26FEB24MIAMIL-MIA",
+            "yes_bid": 59,
+            "yes_ask": 62,
+            "yes_mid": 60.5,
+            "strike": null,
+            "close_time": "2026-03-11T01:00:00Z",
+            "seconds_to_close": 1393740.51956,
+            "volume": 41,
+            "open_interest": 41
+          },
+          {
+            "id": 3,
+            "ts": 1771797059.312978,
+            "ticker": "KXNBAGAME-26FEB24CHACHI-CHI",
+            "yes_bid": 28,
+            "yes_ask": 32,
+            "yes_mid": 30.0,
+            "strike": null,
+            "close_time": "2026-03-11T01:00:00Z",
+            "seconds_to_close": 1393740.431364,
+            "volume": 552,
+            "open_interest": 552
+          }
+        ]
+      }
+    },
+    {
+      "path": "data/markets.db",
+      "name": "markets",
+      "description": "Database with tables: markets, snapshots, sqlite_sequence",
+      "tables": [
+        "markets",
+        "snapshots",
+        "sqlite_sequence"
+      ],
+      "row_count": 5652692,
+      "date_range": {
+        "start": "2026-01-21T05:37:50.588549+00:00",
+        "end": "2026-02-01T18:09:18.735712+00:00"
+      },
+      "sample_data": {
+        "table": "markets",
+        "columns": [
+          "ticker",
+          "title",
+          "category",
+          "close_time",
+          "status",
+          "volume_24h",
+          "open_interest",
+          "created_at",
+          "updated_at"
+        ],
+        "sample_rows": [
+          {
+            "ticker": "KXMVESPORTSMULTIGAMEEXTENDED-S202542E78ECECEE-57351C5B2DE",
+            "title": "yes Denver,yes Houston,yes Toronto,yes COL Avalanche,yes WSH Capitals,yes CAR Hurricanes,yes DAL Stars",
+            "category": null,
+            "close_time": "2026-02-04T03:00:00Z",
+            "status": "active",
+            "volume_24h": 0,
+            "open_interest": 0,
+            "created_at": "2026-01-21T03:41:12.960497+00:00",
+            "updated_at": "2026-01-21T05:38:03.844250+00:00"
+          },
+          {
+            "ticker": "KXMVESPORTSMULTIGAMEEXTENDED-S2025BB1FFBD1D3B-185DAAC0BDA",
+            "title": "yes Luka Don\u010di\u0107: 3+,yes Stephen Curry: 3+,yes Luka Don\u010di\u0107: 6+,yes Scottie Barnes: 6+,yes Houston,yes Luka Don\u010di\u0107: 30+,yes Julius Randle: 20+,yes Kevin Durant: 20+,yes Stephen Curry: 25+,yes Luka Don\u010di\u0107: 6+,yes Rudy Gobert: 10+,yes Stephen Curry: 4+,yes Scottie Barnes: 6+",
+            "category": null,
+            "close_time": "2026-02-04T03:00:00Z",
+            "status": "active",
+            "volume_24h": 0,
+            "open_interest": 0,
+            "created_at": "2026-01-21T03:41:12.965549+00:00",
+            "updated_at": "2026-01-21T03:41:12.965592+00:00"
+          },
+          {
+            "ticker": "KXMVESPORTSMULTIGAMEEXTENDED-S2025ADB055D2050-069D8F23CE4",
+            "title": "yes Auburn,yes Michigan St.,yes Purdue,yes Nevada,yes SMU,yes Missouri,yes Kansas St.",
+            "category": null,
+            "close_time": "2026-02-04T02:00:00Z",
+            "status": "active",
+            "volume_24h": 0,
+            "open_interest": 0,
+            "created_at": "2026-01-21T03:41:12.968114+00:00",
+            "updated_at": "2026-01-21T05:38:03.844559+00:00"
+          }
+        ]
+      }
+    },
+    {
+      "path": "data/btc_settlement_analysis.db",
+      "name": "btc_settlement_analysis",
+      "description": "Database with tables: settlement_events, kalshi_markets, kraken_ohlc",
+      "tables": [
+        "settlement_events",
+        "kalshi_markets",
+        "kraken_ohlc",
+        "settlement_analysis"
+      ],
+      "row_count": 3745,
+      "date_range": null,
+      "sample_data": {
+        "table": "settlement_events",
+        "columns": [
+          "event_ticker",
+          "settlement_ts",
+          "settlement_time",
+          "num_markets",
+          "highest_yes_strike",
+          "lowest_no_strike",
+          "implied_price_low",
+          "implied_price_high",
+          "implied_price_mid",
+          "kraken_close",
+          "kraken_open",
+          "kraken_vwap",
+          "kraken_offset_s",
+          "price_diff",
+          "result_consistent"
+        ],
+        "sample_rows": [
+          {
+            "event_ticker": "KXBTC15M-26FEB102015",
+            "settlement_ts": 1770772500,
+            "settlement_time": "2026-02-11T01:15:00Z",
+            "num_markets": 1,
+            "highest_yes_strike": null,
+            "lowest_no_strike": 69175.92,
+            "implied_price_low": null,
+            "implied_price_high": 69175.92,
+            "implied_price_mid": null,
+            "kraken_close": null,
+            "kraken_open": null,
+            "kraken_vwap": null,
+            "kraken_offset_s": 560760,
+            "price_diff": null,
+            "result_consistent": null
+          },
+          {
+            "event_ticker": "KXBTC15M-26FEB102030",
+            "settlement_ts": 1770773400,
+            "settlement_time": "2026-02-11T01:30:00Z",
+            "num_markets": 1,
+            "highest_yes_strike": null,
+            "lowest_no_strike": 69134.22,
+            "implied_price_low": null,
+            "implied_price_high": 69134.22,
+            "implied_price_mid": null,
+            "kraken_close": null,
+            "kraken_open": null,
+            "kraken_vwap": null,
+            "kraken_offset_s": 559860,
+            "price_diff": null,
+            "result_consistent": null
+          },
+          {
+            "event_ticker": "KXBTC15M-26FEB102045",
+            "settlement_ts": 1770774300,
+            "settlement_time": "2026-02-11T01:45:00Z",
+            "num_markets": 1,
+            "highest_yes_strike": 68917.63,
+            "lowest_no_strike": null,
+            "implied_price_low": 68917.63,
+            "implied_price_high": null,
+            "implied_price_mid": null,
+            "kraken_close": null,
+            "kraken_open": null,
+            "kraken_vwap": null,
+            "kraken_offset_s": 558960,
+            "price_diff": null,
+            "result_consistent": null
+          }
+        ]
+      }
+    },
+    {
+      "path": "data/btc_latency_probe.db",
+      "name": "btc_latency_probe",
+      "description": "Bitcoin latency probe data with Kalshi snapshots and Kraken prices",
+      "tables": [
+        "kraken_trades",
+        "sqlite_sequence",
+        "kraken_snapshots",
+        "kalshi_snapshots"
+      ],
+      "row_count": 22059,
+      "date_range": {
+        "start": "1771392875.994067",
+        "end": "1771406528.38693"
+      },
+      "sample_data": {
+        "table": "kraken_trades",
+        "columns": [
+          "id",
+          "ts",
+          "exchange_ts",
+          "price",
+          "qty"
+        ],
+        "sample_rows": [
+          {
+            "id": 1,
+            "ts": 1771392875.994067,
+            "exchange_ts": 1771392875.834225,
+            "price": 67662.7,
+            "qty": 0.00022656
+          },
+          {
+            "id": 2,
+            "ts": 1771392875.994067,
+            "exchange_ts": 1771392875.834225,
+            "price": 67662.7,
+            "qty": 0.001
+          },
+          {
+            "id": 3,
+            "ts": 1771392875.994067,
+            "exchange_ts": 1771392875.834225,
+            "price": 67665.6,
+            "qty": 5.1e-05
+          }
+        ]
+      }
+    },
+    {
+      "path": "data/btc_probe_l2_1h.db",
+      "name": "btc_probe_l2_1h",
+      "description": "Database with tables: kraken_trades, sqlite_sequence, kraken_snapshots",
+      "tables": [
+        "kraken_trades",
+        "sqlite_sequence",
+        "kraken_snapshots",
+        "kalshi_snapshots",
+        "market_settlements",
+        "binance_trades",
+        "coinbase_trades",
+        "kalshi_orderbook",
+        "binance_l2",
+        "coinbase_l2"
+      ],
+      "row_count": 134096,
+      "date_range": {
+        "start": "1771787426.018479",
+        "end": "1771791021.439117"
+      },
+      "sample_data": {
+        "table": "kraken_trades",
+        "columns": [
+          "id",
+          "ts",
+          "exchange_ts",
+          "price",
+          "qty"
+        ],
+        "sample_rows": [
+          {
+            "id": 1,
+            "ts": 1771787426.018479,
+            "exchange_ts": 1771787425.973752,
+            "price": 67449.8,
+            "qty": 4.416e-05
+          },
+          {
+            "id": 2,
+            "ts": 1771787427.746815,
+            "exchange_ts": 1771787427.702946,
+            "price": 67449.8,
+            "qty": 0.00058107
+          },
+          {
+            "id": 3,
+            "ts": 1771787432.154606,
+            "exchange_ts": 1771787432.110349,
+            "price": 67449.8,
+            "qty": 2.965e-05
+          }
+        ]
+      }
+    },
+    {
+      "path": "data/btc_probe_merged.db",
+      "name": "btc_probe_merged",
+      "description": "Database with tables: kraken_trades, sqlite_sequence, kraken_snapshots",
+      "tables": [
+        "kraken_trades",
+        "sqlite_sequence",
+        "kraken_snapshots",
+        "kalshi_snapshots",
+        "market_settlements",
+        "binance_trades",
+        "coinbase_trades"
+      ],
+      "row_count": 190792,
+      "date_range": {
+        "start": "1771392875.994067",
+        "end": "1771556451.115762"
+      },
+      "sample_data": {
+        "table": "kraken_trades",
+        "columns": [
+          "id",
+          "ts",
+          "exchange_ts",
+          "price",
+          "qty"
+        ],
+        "sample_rows": [
+          {
+            "id": 1,
+            "ts": 1771537542.5403461,
+            "exchange_ts": 1771537542.459873,
+            "price": 66959.8,
+            "qty": 0.00038802
+          },
+          {
+            "id": 2,
+            "ts": 1771537545.016234,
+            "exchange_ts": 1771537544.93238,
+            "price": 66959.8,
+            "qty": 0.00074672
+          },
+          {
+            "id": 3,
+            "ts": 1771537549.070154,
+            "exchange_ts": 1771537548.989334,
+            "price": 66959.7,
+            "qty": 0.00071573
+          }
+        ]
+      }
+    },
+    {
+      "path": "data/btc_probe_l2.db",
+      "name": "btc_probe_l2",
+      "description": "Database with tables: kraken_trades, sqlite_sequence, kraken_snapshots",
+      "tables": [
+        "kraken_trades",
+        "sqlite_sequence",
+        "kraken_snapshots",
+        "kalshi_snapshots",
+        "market_settlements",
+        "binance_trades",
+        "coinbase_trades",
+        "kalshi_orderbook",
+        "binance_l2",
+        "coinbase_l2"
+      ],
+      "row_count": 45851,
+      "date_range": {
+        "start": "1771783552.447339",
+        "end": "1771784591.062896"
+      },
+      "sample_data": {
+        "table": "kraken_trades",
+        "columns": [
+          "id",
+          "ts",
+          "exchange_ts",
+          "price",
+          "qty"
+        ],
+        "sample_rows": [
+          {
+            "id": 1,
+            "ts": 1771783552.447339,
+            "exchange_ts": 1771783552.38588,
+            "price": 67357.5,
+            "qty": 0.00088995
+          },
+          {
+            "id": 2,
+            "ts": 1771783553.12796,
+            "exchange_ts": 1771783553.059777,
+            "price": 67357.5,
+            "qty": 0.07754238
+          },
+          {
+            "id": 3,
+            "ts": 1771783553.12796,
+            "exchange_ts": 1771783553.059777,
+            "price": 67357.5,
+            "qty": 0.001
+          }
+        ]
+      }
+    },
+    {
+      "path": "data/spreads.db",
+      "name": "spreads",
+      "description": "Database with tables: spread_pairs, sqlite_sequence, spread_snapshots",
+      "tables": [
+        "spread_pairs",
+        "sqlite_sequence",
+        "spread_snapshots"
+      ],
+      "row_count": 41,
+      "date_range": {
+        "start": "2026-01-22T04:04:52.079594+00:00",
+        "end": "2026-01-22T04:07:30.108874+00:00"
+      },
+      "sample_data": {
+        "table": "spread_pairs",
+        "columns": [
+          "id",
+          "pair_id",
+          "ticker_a",
+          "ticker_b",
+          "event_ticker",
+          "event_title",
+          "match_type",
+          "created_at"
+        ],
+        "sample_rows": [
+          {
+            "id": 1,
+            "pair_id": "KXNBAGAME-26JAN21TORSAC-TOR:KXNBAGAME-26JAN21TORSAC-SAC",
+            "ticker_a": "KXNBAGAME-26JAN21TORSAC-TOR",
+            "ticker_b": "KXNBAGAME-26JAN21TORSAC-SAC",
+            "event_ticker": "KXNBAGAME-26JAN21TORSAC",
+            "event_title": "Toronto vs Sacramento",
+            "match_type": "sports",
+            "created_at": "2026-01-22 04:04:52"
+          },
+          {
+            "id": 2,
+            "pair_id": "KXNBAGAME-26JAN22DENWAS-DEN:KXNBAGAME-26JAN22DENWAS-WAS",
+            "ticker_a": "KXNBAGAME-26JAN22DENWAS-DEN",
+            "ticker_b": "KXNBAGAME-26JAN22DENWAS-WAS",
+            "event_ticker": "KXNBAGAME-26JAN22DENWAS",
+            "event_title": "Denver vs Washington",
+            "match_type": "sports",
+            "created_at": "2026-01-22 04:04:52"
+          },
+          {
+            "id": 3,
+            "pair_id": "KXNBAGAME-26JAN21OKCMIL-OKC:KXNBAGAME-26JAN21OKCMIL-MIL",
+            "ticker_a": "KXNBAGAME-26JAN21OKCMIL-OKC",
+            "ticker_b": "KXNBAGAME-26JAN21OKCMIL-MIL",
+            "event_ticker": "KXNBAGAME-26JAN21OKCMIL",
+            "event_title": "Oklahoma City vs Milwaukee",
+            "match_type": "sports",
+            "created_at": "2026-01-22 04:04:52"
+          }
+        ]
+      }
+    },
+    {
+      "path": "data/research.db",
+      "name": "research",
+      "description": "Research hypotheses, backtests, and reports",
+      "tables": [
+        "hypotheses",
+        "sqlite_sequence",
+        "backtests",
+        "reports",
+        "deployments"
+      ],
+      "row_count": 8,
+      "date_range": null,
+      "sample_data": {
+        "table": "hypotheses",
+        "columns": [
+          "id",
+          "name",
+          "description",
+          "source",
+          "created_at",
+          "status",
+          "metadata"
+        ],
+        "sample_rows": [
+          {
+            "id": 1,
+            "name": "NBA Home Underdog Fade",
+            "description": "Fade home underdogs in the 4th quarter when trailing by 10-15 points",
+            "source": "mcp_research",
+            "created_at": "2026-02-27 14:38:16.359837",
+            "status": "deployed",
+            "metadata": "{\"market_type\": \"moneyline\", \"sport\": \"nba\", \"trigger\": \"4th_quarter_deficit\", \"min_deficit\": 10, \"max_deficit\": 15}"
+          }
+        ]
+      }
+    },
+    {
+      "path": "data/smart_spreads.db",
+      "name": "smart_spreads",
+      "description": "Database with tables: snapshots, opportunities",
+      "tables": [
+        "snapshots",
+        "opportunities"
+      ],
+      "row_count": 25,
+      "date_range": {
+        "start": "2026-01-22T04:09:55.236079+00:00",
+        "end": "2026-01-22T04:10:29.817977+00:00"
+      },
+      "sample_data": {
+        "table": "snapshots",
+        "columns": [
+          "id",
+          "timestamp",
+          "pair_id",
+          "a_bid",
+          "a_ask",
+          "b_bid",
+          "b_ask",
+          "combined",
+          "edge"
+        ],
+        "sample_rows": [
+          {
+            "id": 1,
+            "timestamp": "2026-01-22T04:09:55.236079+00:00",
+            "pair_id": "KXNBAGAME-26JAN21TORSAC-TOR:KXNBAGAME-26JAN21TORSAC-SAC",
+            "a_bid": 0.38,
+            "a_ask": 0.39,
+            "b_bid": 0.62,
+            "b_ask": 0.63,
+            "combined": 1.02,
+            "edge": -0.020000000000000018
+          },
+          {
+            "id": 2,
+            "timestamp": "2026-01-22T04:09:56.094278+00:00",
+            "pair_id": "KXNBAGAME-26JAN22DENWAS-DEN:KXNBAGAME-26JAN22DENWAS-WAS",
+            "a_bid": 0.68,
+            "a_ask": 0.69,
+            "b_bid": 0.32,
+            "b_ask": 0.33,
+            "combined": 1.02,
+            "edge": -0.020000000000000018
+          },
+          {
+            "id": 3,
+            "timestamp": "2026-01-22T04:09:56.900125+00:00",
+            "pair_id": "KXNBAGAME-26JAN21OKCMIL-OKC:KXNBAGAME-26JAN21OKCMIL-MIL",
+            "a_bid": 0.96,
+            "a_ask": 0.98,
+            "b_bid": 0.02,
+            "b_ask": 0.03,
+            "combined": 1.01,
+            "edge": -0.010000000000000009
+          }
+        ]
+      }
+    },
+    {
+      "path": "data/btc_ob_48h.db",
+      "name": "btc_ob_48h",
+      "description": "Database with tables: kraken_trades, sqlite_sequence, kraken_snapshots",
+      "tables": [
+        "kraken_trades",
+        "sqlite_sequence",
+        "kraken_snapshots",
+        "kalshi_snapshots",
+        "market_settlements",
+        "binance_trades",
+        "coinbase_trades",
+        "kalshi_orderbook"
+      ],
+      "row_count": 18140622,
+      "date_range": {
+        "start": "1771780257.75575",
+        "end": "1771957993.380521"
+      },
+      "sample_data": {
+        "table": "kraken_trades",
+        "columns": [
+          "id",
+          "ts",
+          "exchange_ts",
+          "price",
+          "qty"
+        ],
+        "sample_rows": [
+          {
+            "id": 1,
+            "ts": 1771780257.75575,
+            "exchange_ts": 1771780257.331011,
+            "price": 67522.3,
+            "qty": 0.0006061
+          },
+          {
+            "id": 2,
+            "ts": 1771780258.089325,
+            "exchange_ts": 1771780258.003888,
+            "price": 67522.3,
+            "qty": 0.00055132
+          },
+          {
+            "id": 3,
+            "ts": 1771780274.564945,
+            "exchange_ts": 1771780274.494249,
+            "price": 67522.3,
+            "qty": 0.00027655
+          }
+        ]
+      }
+    },
+    {
+      "path": "data/btc_ob_test.db",
+      "name": "btc_ob_test",
+      "description": "Database with tables: kraken_trades, sqlite_sequence, kraken_snapshots",
+      "tables": [
+        "kraken_trades",
+        "sqlite_sequence",
+        "kraken_snapshots",
+        "kalshi_snapshots",
+        "market_settlements",
+        "binance_trades",
+        "coinbase_trades",
+        "kalshi_orderbook"
+      ],
+      "row_count": 3481,
+      "date_range": {
+        "start": "1771561533.455051",
+        "end": "1771561631.172128"
+      },
+      "sample_data": {
+        "table": "kraken_trades",
+        "columns": [
+          "id",
+          "ts",
+          "exchange_ts",
+          "price",
+          "qty"
+        ],
+        "sample_rows": [
+          {
+            "id": 1,
+            "ts": 1771561533.455051,
+            "exchange_ts": 1771561533.393979,
+            "price": 67185.9,
+            "qty": 0.00177604
+          },
+          {
+            "id": 2,
+            "ts": 1771561538.065728,
+            "exchange_ts": 1771561538.004741,
+            "price": 67186.0,
+            "qty": 0.00058852
+          },
+          {
+            "id": 3,
+            "ts": 1771561538.065728,
+            "exchange_ts": 1771561538.004741,
+            "price": 67186.0,
+            "qty": 0.00038376
+          }
+        ]
+      }
+    },
+    {
+      "path": "data/btc_latency_probe_5h.db",
+      "name": "btc_latency_probe_5h",
+      "description": "Database with tables: kraken_trades, sqlite_sequence, kraken_snapshots",
+      "tables": [
+        "kraken_trades",
+        "sqlite_sequence",
+        "kraken_snapshots",
+        "kalshi_snapshots",
+        "market_settlements"
+      ],
+      "row_count": 25403,
+      "date_range": {
+        "start": "1771468975.927933",
+        "end": "1771500085.5898292"
+      },
+      "sample_data": {
+        "table": "kraken_trades",
+        "columns": [
+          "id",
+          "ts",
+          "exchange_ts",
+          "price",
+          "qty"
+        ],
+        "sample_rows": [
+          {
+            "id": 1,
+            "ts": 1771468975.927933,
+            "exchange_ts": 1771468975.863547,
+            "price": 66690.6,
+            "qty": 0.00365508
+          },
+          {
+            "id": 2,
+            "ts": 1771468984.173506,
+            "exchange_ts": 1771468984.107707,
+            "price": 66690.6,
+            "qty": 0.01145785
+          },
+          {
+            "id": 3,
+            "ts": 1771468984.328681,
+            "exchange_ts": 1771468984.262959,
+            "price": 66690.6,
+            "qty": 0.00315367
+          }
+        ]
+      }
+    },
+    {
+      "path": "data/btc_scalp_probe.db",
+      "name": "btc_scalp_probe",
+      "description": "Database with tables: kraken_trades, sqlite_sequence, kraken_snapshots",
+      "tables": [
+        "kraken_trades",
+        "sqlite_sequence",
+        "kraken_snapshots",
+        "kalshi_snapshots",
+        "market_settlements",
+        "binance_trades",
+        "coinbase_trades"
+      ],
+      "row_count": 163236,
+      "date_range": {
+        "start": "1771537542.5403461",
+        "end": "1771557378.559812"
+      },
+      "sample_data": {
+        "table": "kraken_trades",
+        "columns": [
+          "id",
+          "ts",
+          "exchange_ts",
+          "price",
+          "qty"
+        ],
+        "sample_rows": [
+          {
+            "id": 1,
+            "ts": 1771537542.5403461,
+            "exchange_ts": 1771537542.459873,
+            "price": 66959.8,
+            "qty": 0.00038802
+          },
+          {
+            "id": 2,
+            "ts": 1771537545.016234,
+            "exchange_ts": 1771537544.93238,
+            "price": 66959.8,
+            "qty": 0.00074672
+          },
+          {
+            "id": 3,
+            "ts": 1771537549.070154,
+            "exchange_ts": 1771537548.989334,
+            "price": 66959.7,
+            "qty": 0.00071573
+          }
+        ]
+      }
+    }
+  ],
+  "instructions": "\n            Analyze these data sources and suggest comparisons that could reveal trading edges.\n\n            For each potential edge:\n            1. Which data sources should be compared?\n            2. What metric defines an \"edge\"?\n            3. Why might this edge exist? (information asymmetry, behavioral bias, latency, etc.)\n            4. What statistical test should be used?\n            5. What pattern would indicate opportunity?\n\n            Focus on:\n            - Cross-referencing forecast/prediction data with market prices\n            - Latency opportunities (comparing real-time feeds)\n            - Mispricing due to information gaps\n            - Mean reversion vs momentum patterns\n\n            Return JSON array of analysis plans with structure:\n            {\n                \"name\": \"Strategy Name\",\n                \"data_sources\": [\"db1\", \"db2\"],\n                \"comparison_type\": \"forecast_vs_market_price\",\n                \"edge_definition\": \"forecast_confidence > market_implied_probability\",\n                \"reasoning\": \"Why this edge exists...\",\n                \"expected_pattern\": \"What we're looking for...\",\n                \"statistical_test\": \"How to validate...\",\n                \"join_conditions\": {\"on\": [\"timestamp\", \"ticker\"]}\n            }\n            "
+}

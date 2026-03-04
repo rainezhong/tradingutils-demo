@@ -13,7 +13,6 @@ Usage:
 import argparse
 import csv
 import logging
-import os
 import signal
 import sys
 import threading
@@ -28,9 +27,12 @@ sys.path.insert(0, str(project_root))
 from src.core.api_client import KalshiClient
 from src.core.config import Config
 from src.risk.risk_manager import RiskManager
-from src.strategies.crypto_latency import CryptoLatencyConfig
-from src.strategies.crypto_latency.kalshi_orchestrator import KalshiCryptoOrchestrator
-from src.strategies.crypto_latency.kalshi_executor import KalshiOpportunity, KalshiExecutionResult
+from strategies.crypto_latency import CryptoLatencyConfig
+from strategies.crypto_latency.kalshi_orchestrator import KalshiCryptoOrchestrator
+from strategies.crypto_latency.kalshi_executor import (
+    KalshiOpportunity,
+    KalshiExecutionResult,
+)
 
 
 # Trade log file
@@ -83,7 +85,8 @@ def parse_args() -> argparse.Namespace:
         help="Maximum total exposure (default: $50)",
     )
     parser.add_argument(
-        "-v", "--verbose",
+        "-v",
+        "--verbose",
         action="store_true",
         help="Verbose logging",
     )
@@ -105,26 +108,28 @@ class TradeLogger:
         if not self.log_path.exists():
             with open(self.log_path, "w", newline="") as f:
                 writer = csv.writer(f)
-                writer.writerow([
-                    "timestamp",
-                    "ticker",
-                    "asset",
-                    "side",
-                    "action",  # entry/exit/settlement
-                    "contracts",
-                    "price_cents",
-                    "spot_price",
-                    "strike_price",
-                    "implied_prob",
-                    "market_prob",
-                    "edge",
-                    "time_to_expiry_sec",
-                    "order_id",
-                    "pnl",
-                    "cumulative_pnl",
-                    "bankroll",
-                    "mode",  # live/paper
-                ])
+                writer.writerow(
+                    [
+                        "timestamp",
+                        "ticker",
+                        "asset",
+                        "side",
+                        "action",  # entry/exit/settlement
+                        "contracts",
+                        "price_cents",
+                        "spot_price",
+                        "strike_price",
+                        "implied_prob",
+                        "market_prob",
+                        "edge",
+                        "time_to_expiry_sec",
+                        "order_id",
+                        "pnl",
+                        "cumulative_pnl",
+                        "bankroll",
+                        "mode",  # live/paper
+                    ]
+                )
 
     def log_entry(
         self,
@@ -136,26 +141,28 @@ class TradeLogger:
         """Log a trade entry."""
         with open(self.log_path, "a", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow([
-                datetime.utcnow().isoformat(),
-                opportunity.market.ticker,
-                opportunity.market.asset,
-                opportunity.side,
-                "entry",
-                result.executed_size,
-                result.executed_price,
-                opportunity.spot_price,
-                opportunity.market.strike_price,
-                f"{opportunity.implied_prob:.4f}",
-                f"{opportunity.market_prob:.4f}",
-                f"{opportunity.edge:.4f}",
-                opportunity.market.time_to_expiry_sec,
-                result.order_id,
-                "",  # No P&L on entry
-                "",
-                f"{bankroll:.2f}",
-                mode,
-            ])
+            writer.writerow(
+                [
+                    datetime.utcnow().isoformat(),
+                    opportunity.market.ticker,
+                    opportunity.market.asset,
+                    opportunity.side,
+                    "entry",
+                    result.executed_size,
+                    result.executed_price,
+                    opportunity.spot_price,
+                    opportunity.market.strike_price,
+                    f"{opportunity.implied_prob:.4f}",
+                    f"{opportunity.market_prob:.4f}",
+                    f"{opportunity.edge:.4f}",
+                    opportunity.market.time_to_expiry_sec,
+                    result.order_id,
+                    "",  # No P&L on entry
+                    "",
+                    f"{bankroll:.2f}",
+                    mode,
+                ]
+            )
 
     def log_exit(
         self,
@@ -173,26 +180,28 @@ class TradeLogger:
         """Log a trade exit."""
         with open(self.log_path, "a", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow([
-                datetime.utcnow().isoformat(),
-                ticker,
-                asset,
-                side,
-                f"exit_{reason}",
-                contracts,
-                price_cents,
-                "",  # No spot price on exit
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-                f"{pnl:.2f}",
-                f"{cumulative_pnl:.2f}",
-                f"{bankroll:.2f}",
-                mode,
-            ])
+            writer.writerow(
+                [
+                    datetime.utcnow().isoformat(),
+                    ticker,
+                    asset,
+                    side,
+                    f"exit_{reason}",
+                    contracts,
+                    price_cents,
+                    "",  # No spot price on exit
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    f"{pnl:.2f}",
+                    f"{cumulative_pnl:.2f}",
+                    f"{bankroll:.2f}",
+                    mode,
+                ]
+            )
 
 
 class DryRunKalshiClient:
@@ -271,7 +280,6 @@ def main() -> int:
     trade_logger = TradeLogger(TRADE_LOG_PATH)
 
     # Stats
-    cumulative_pnl = 0.0
     total_trades = 0
 
     # Shutdown handling
@@ -296,18 +304,23 @@ def main() -> int:
                     resp = kalshi_client._request("GET", "/portfolio/balance")
                     bankroll = resp.get("balance", 0) / 100
                     config.bankroll = bankroll
-                except:
+                except Exception:
                     pass
 
             # Create orchestrator for this cycle
-            risk_config_obj = type('RiskConfig', (), {
-                'max_position_size': int(args.max_exposure),
-                'max_total_position': int(args.max_exposure),
-                'max_daily_loss': args.max_exposure * 2,
-                'max_loss_per_position': args.max_exposure * 0.5,
-            })()
+            type(
+                "RiskConfig",
+                (),
+                {
+                    "max_position_size": int(args.max_exposure),
+                    "max_total_position": int(args.max_exposure),
+                    "max_daily_loss": args.max_exposure * 2,
+                    "max_loss_per_position": args.max_exposure * 0.5,
+                },
+            )()
 
             from src.core.config import RiskConfig
+
             risk_config = RiskConfig(
                 max_position_size=int(args.max_exposure),
                 max_total_position=int(args.max_exposure),

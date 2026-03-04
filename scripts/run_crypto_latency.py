@@ -20,11 +20,10 @@ sys.path.insert(0, str(project_root))
 from src.core.config import RiskConfig
 from src.polymarket.client import PolymarketClient
 from src.risk.risk_manager import RiskManager
-from src.strategies.crypto_latency import (
+from strategies.crypto_latency import (
     CryptoLatencyConfig,
-    CryptoLatencyOrchestrator,
 )
-from src.strategies.crypto_latency.orchestrator import run_orchestrator
+from strategies.crypto_latency.orchestrator import run_orchestrator
 
 
 def setup_logging(verbose: bool = False) -> None:
@@ -121,7 +120,8 @@ Examples:
 
     # Verbosity
     parser.add_argument(
-        "-v", "--verbose",
+        "-v",
+        "--verbose",
         action="store_true",
         help="Enable verbose logging",
     )
@@ -152,7 +152,9 @@ def main() -> int:
     # Check for required environment variables
     private_key = os.environ.get("POLYMARKET_PRIVATE_KEY")
     if not private_key and args.live:
-        logger.error("POLYMARKET_PRIVATE_KEY environment variable required for live trading")
+        logger.error(
+            "POLYMARKET_PRIVATE_KEY environment variable required for live trading"
+        )
         return 1
 
     # Build configuration
@@ -190,14 +192,15 @@ def main() -> int:
         max_position_size=int(config.max_position_per_market),
         max_total_position=int(config.max_total_exposure),
         max_daily_loss=config.max_daily_loss,
-        max_loss_per_position=config.max_position_per_market * 0.5,  # 50% max loss per position
+        max_loss_per_position=config.max_position_per_market
+        * 0.5,  # 50% max loss per position
     )
     risk_manager = RiskManager(risk_config)
 
     # Run orchestrator
     try:
         logger.info("Starting crypto latency strategy...")
-        orchestrator = run_orchestrator(
+        run_orchestrator(
             polymarket_client=polymarket,
             config=config,
             risk_manager=risk_manager,

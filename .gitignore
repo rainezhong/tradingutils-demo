@@ -1,15 +1,53 @@
-apis/keys/key.py
-apis/keys/key.txt
-apis/keys/*
-*.pyc
-data/*.db
-config.yaml
+# Credentials
+.env
+*.key
+*.pem
+.kalshi_key.*
+apis/keys/
+
+# Python
 __pycache__/
 *.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Testing
 .pytest_cache/
 .coverage
-htmlcov
-*.err
+htmlcov/
+test_results/
+
+# Data
+data/*.db
+data/*.db-shm
+data/*.db-wal
+data/*.csv
+data/*.json
+data/*.pkl
+data/recordings/
+data/backtest_results/
+
+# Logs
 *.log
-*.pkl.env
-.env
+*.err
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+*.ipynb
+.ipynb_checkpoints/
+
+# Models
+models/

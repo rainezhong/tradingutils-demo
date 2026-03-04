@@ -1,0 +1,10 @@
+{
+  "reviews": {
+    "auto": true,
+    "comment_severity": "MEDIUM_AND_ABOVE"
+  },
+  "pull_request_summary": {
+    "enabled": true
+  },
+  "code_review_instructions": "This is a Python trading system. Focus on correctness of trading logic, numerical precision, race conditions, and proper error handling. Skip style issues — ruff handles formatting. Strategies implement the I_Strategy interface. Pay attention to order management edge cases and signal generation logic."
+}

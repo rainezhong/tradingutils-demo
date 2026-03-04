@@ -29,7 +29,7 @@ sys.path.insert(0, str(project_root))
 
 from src.core.api_client import KalshiClient
 from src.core.config import Config
-from src.core.trading_state import get_trading_state
+from core.trading_state import get_trading_state
 from src.feeds.coinbase_feed import CoinbasePriceFeed, CoinbasePriceUpdate
 
 
@@ -59,7 +59,7 @@ class CryptoMarketRecorder:
         self._kalshi = KalshiClient(config=self._config)
         self._price_feed = CoinbasePriceFeed(
             symbols=self.symbols,
-            poll_interval_sec=0.5,
+            poll_interval_sec=0.25,  # Reduced from 0.5s for faster price updates
         )
 
         # State
@@ -214,13 +214,17 @@ class CryptoMarketRecorder:
                 if status not in ("open", "active"):
                     # Record settlement
                     result = market.get("result", "")
-                    if result and ticker not in [s["ticker"] for s in self._settlements]:
-                        self._settlements.append({
-                            "ticker": ticker,
-                            "asset": market_info["asset"],
-                            "result": result,
-                            "settled_at": timestamp,
-                        })
+                    if result and ticker not in [
+                        s["ticker"] for s in self._settlements
+                    ]:
+                        self._settlements.append(
+                            {
+                                "ticker": ticker,
+                                "asset": market_info["asset"],
+                                "result": result,
+                                "settled_at": timestamp,
+                            }
+                        )
                         logger.info(f"Market settled: {ticker} -> {result}")
                     continue
 
@@ -250,7 +254,9 @@ class CryptoMarketRecorder:
 
         # Log progress
         if len(self._snapshots) % 100 == 0:
-            logger.info(f"Recorded {len(self._snapshots)} snapshots, {len(self._settlements)} settlements")
+            logger.info(
+                f"Recorded {len(self._snapshots)} snapshots, {len(self._settlements)} settlements"
+            )
 
     def _check_settlements(self):
         """Check all tracked markets for settlements."""
@@ -264,12 +270,14 @@ class CryptoMarketRecorder:
                 result = market.get("result", "")
 
                 if result:
-                    self._settlements.append({
-                        "ticker": ticker,
-                        "asset": market_info["asset"],
-                        "result": result,
-                        "settled_at": datetime.utcnow().isoformat(),
-                    })
+                    self._settlements.append(
+                        {
+                            "ticker": ticker,
+                            "asset": market_info["asset"],
+                            "result": result,
+                            "settled_at": datetime.utcnow().isoformat(),
+                        }
+                    )
                     logger.info(f"Market settled: {ticker} -> {result}")
 
             except Exception as e:
@@ -279,7 +287,9 @@ class CryptoMarketRecorder:
         """Save recorded data to file."""
         data = {
             "metadata": {
-                "start_time": self._start_time.isoformat() if self._start_time else None,
+                "start_time": self._start_time.isoformat()
+                if self._start_time
+                else None,
                 "end_time": datetime.utcnow().isoformat(),
                 "symbols": self.symbols,
                 "record_interval_sec": self.record_interval_sec,
@@ -304,19 +314,22 @@ class CryptoMarketRecorder:
 def main():
     parser = argparse.ArgumentParser(description="Record crypto market data")
     parser.add_argument(
-        "--output", "-o",
+        "--output",
+        "-o",
         type=str,
         default=None,
         help="Output file path (default: data/recordings/crypto_YYYYMMDD_HHMMSS.json)",
     )
     parser.add_argument(
-        "--duration", "-d",
+        "--duration",
+        "-d",
         type=float,
         default=None,
         help="Recording duration in seconds (default: until Ctrl+C)",
     )
     parser.add_argument(
-        "--interval", "-i",
+        "--interval",
+        "-i",
         type=float,
         default=1.0,
         help="Recording interval in seconds (default: 1.0)",

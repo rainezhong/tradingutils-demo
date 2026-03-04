@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/spread_scanner.css">
+</head>
+<body>
+    <header>
+        <h1>Trading Dashboard</h1>
+        <div class="status-bar">
+            <span id="connection-status" class="status-disconnected">Disconnected</span>
+            <span id="uptime">Uptime: --</span>
+        </div>
+    </header>
+
+    <!-- Tab Navigation -->
+    <nav class="tab-nav">
+        <button class="tab-button active" data-tab="strategy-tab">Strategy Monitor</button>
+        <button class="tab-button" data-tab="spread-scanner-tab">Spread Scanner</button>
+    </nav>
+
+    <main class="dashboard-content">
+        <!-- Strategy Monitor Tab (Existing Content) -->
+        <div id="strategy-tab" class="tab-content active">
+            <div class="strategy-dashboard">
+        <!-- Strategy Control Bar -->
+        <section class="control-bar">
+            <div class="strategy-select">
+                <label>Strategy:</label>
+                <select id="strategy-selector">
+                    <option value="">Select strategy...</option>
+                    <optgroup label="NBA">
+                        <option value="nba_mispricing">NBA Mispricing</option>
+                        <option value="late_game_blowout">Late Game Blowout</option>
+                        <option value="underdog_scalp">Underdog Scalp</option>
+                        <option value="spread_capture">Spread Capture</option>
+                        <option value="liquidity_provider">Liquidity Provider</option>
+                        <option value="depth_scalper">Depth Scalper</option>
+                        <option value="tied_game_spread">Tied Game Spread</option>
+                        <option value="total_points">Total Points O/U</option>
+                    </optgroup>
+                    <optgroup label="Crypto / Cross-Exchange">
+                        <option value="crypto_latency">Crypto Latency Arb</option>
+                        <option value="arbitrage">Cross-Exchange Arb</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div class="game-select">
+                <label>Game:</label>
+                <select id="game-selector">
+                    <option value="">Select game...</option>
+                </select>
+                <button id="btn-refresh-games" class="btn-refresh" title="Refresh games">Refresh</button>
+            </div>
+            <div class="mode-toggle">
+                <button id="mode-paper" class="mode-btn active">Paper</button>
+                <button id="mode-live" class="mode-btn">Live</button>
+            </div>
+            <div class="control-buttons">
+                <button id="btn-start" class="btn-start">Start</button>
+                <button id="btn-stop" class="btn-stop" disabled>Stop</button>
+            </div>
+        </section>
+
+        <!-- Status Bar -->
+        <section class="status-panel" id="status-panel" style="display: none;">
+            <div class="status-item">
+                <span class="status-label">Status</span>
+                <span id="strategy-status" class="status-value">--</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Started</span>
+                <span id="strategy-started" class="status-value">--</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Total P&L</span>
+                <span id="strategy-pnl" class="status-value pnl">$0.00</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Trades</span>
+                <span id="strategy-trades" class="status-value">0</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Win Rate</span>
+                <span id="strategy-winrate" class="status-value">--</span>
+            </div>
+        </section>
+
+        <!-- OMS Metrics Panel -->
+        <section class="oms-metrics-panel panel" id="oms-panel" style="display: none;">
+            <h3>OMS Metrics <span id="oms-updated" class="oms-updated"></span></h3>
+            <div class="oms-grid">
+                <div class="oms-section">
+                    <h4>Orders</h4>
+                    <div class="oms-stats" id="oms-order-stats">
+                        <div class="oms-stat">
+                            <span class="oms-stat-label">Active</span>
+                            <span class="oms-stat-value" id="oms-active">0</span>
+                        </div>
+                        <div class="oms-stat">
+                            <span class="oms-stat-label">Pending</span>
+                            <span class="oms-stat-value" id="oms-pending">0</span>
+                        </div>
+                        <div class="oms-stat">
+                            <span class="oms-stat-label">Filled</span>
+                            <span class="oms-stat-value positive" id="oms-filled">0</span>
+                        </div>
+                        <div class="oms-stat">
+                            <span class="oms-stat-label">Canceled</span>
+                            <span class="oms-stat-value" id="oms-canceled">0</span>
+                        </div>
+                        <div class="oms-stat">
+                            <span class="oms-stat-label">Failed</span>
+                            <span class="oms-stat-value" id="oms-failed">0</span>
+                        </div>
+                        <div class="oms-stat">
+                            <span class="oms-stat-label">Total</span>
+                            <span class="oms-stat-value" id="oms-total">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="oms-section">
+                    <h4>Fills</h4>
+                    <div class="oms-stats" id="oms-fill-stats">
+                        <div class="oms-stat">
+                            <span class="oms-stat-label">Contracts</span>
+                            <span class="oms-stat-value" id="oms-fill-contracts">0</span>
+                        </div>
+                        <div class="oms-stat">
+                            <span class="oms-stat-label">Value</span>
+                            <span class="oms-stat-value" id="oms-fill-value">$0</span>
+                        </div>
+                        <div class="oms-stat">
+                            <span class="oms-stat-label">Avg Price</span>
+                            <span class="oms-stat-value" id="oms-fill-avg-price">--</span>
+                        </div>
+                        <div class="oms-stat">
+                            <span class="oms-stat-label">Avg Time</span>
+                            <span class="oms-stat-value" id="oms-fill-avg-time">--</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="oms-section">
+                    <h4>Capital</h4>
+                    <div class="oms-stats" id="oms-capital-stats">
+                        <div class="oms-stat">
+                            <span class="oms-stat-label">Balance</span>
+                            <span class="oms-stat-value" id="oms-cap-balance">--</span>
+                        </div>
+                        <div class="oms-stat">
+                            <span class="oms-stat-label">Available</span>
+                            <span class="oms-stat-value positive" id="oms-cap-available">--</span>
+                        </div>
+                        <div class="oms-stat">
+                            <span class="oms-stat-label">Reserved</span>
+                            <span class="oms-stat-value" id="oms-cap-reserved">--</span>
+                        </div>
+                        <div class="oms-stat">
+                            <span class="oms-stat-label">Exposure</span>
+                            <span class="oms-stat-value" id="oms-cap-exposure">--</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="oms-section">
+                    <h4>Issues</h4>
+                    <div class="oms-stats" id="oms-issue-stats">
+                        <div class="oms-stat">
+                            <span class="oms-stat-label">Failures</span>
+                            <span class="oms-stat-value" id="oms-failures">0</span>
+                        </div>
+                        <div class="oms-stat">
+                            <span class="oms-stat-label">Violations</span>
+                            <span class="oms-stat-value" id="oms-violations">0</span>
+                        </div>
+                        <div class="oms-stat">
+                            <span class="oms-stat-label">Exchanges</span>
+                            <span class="oms-stat-value" id="oms-exchanges">0</span>
+                        </div>
+                        <div class="oms-stat">
+                            <span class="oms-stat-label">Timeouts</span>
+                            <span class="oms-stat-value" id="oms-timeouts">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="oms-failure-reasons" id="oms-failure-reasons" style="display: none;">
+                <h4>Failure Breakdown</h4>
+                <div id="oms-failure-list" class="oms-failure-list"></div>
+            </div>
+        </section>
+
+        <!-- Game + Market Panel -->
+        <section class="data-panels">
+            <div class="panel game-panel" id="game-panel">
+                <h3>Live Game</h3>
+                <div id="game-display" class="game-display">
+                    <div class="empty-state">No game data</div>
+                </div>
+            </div>
+            <div class="panel orderbook-panel" id="market-panel">
+                <h3>Order Book</h3>
+                <div id="market-ticker" class="market-ticker"></div>
+                <div id="orderbook-display" class="orderbook-display">
+                    <div class="empty-state">No market data</div>
+                </div>
+                <div id="market-info" class="market-info"></div>
+            </div>
+        </section>
+
+        <!-- Probability Timeline -->
+        <section class="panel prob-timeline-panel" id="prob-timeline-panel" style="display: none;">
+            <h3>Win Probability Timeline</h3>
+            <canvas id="prob-chart" height="200"></canvas>
+        </section>
+
+        <!-- Positions Table -->
+        <section class="panel positions-panel">
+            <h3>Open Positions</h3>
+            <table id="positions-table">
+                <thead>
+                    <tr>
+                        <th>Ticker</th>
+                        <th>Side</th>
+                        <th>Entry</th>
+                        <th>Current</th>
+                        <th>Size</th>
+                        <th>P&L</th>
+                    </tr>
+                </thead>
+                <tbody id="positions-body">
+                    <tr class="empty-row"><td colspan="6">No positions</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Trade Log -->
+        <section class="panel trades-panel">
+            <h3>Trade Log</h3>
+            <table id="trades-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Ticker</th>
+                        <th>Action</th>
+                        <th>Side</th>
+                        <th>Price</th>
+                        <th>Size</th>
+                        <th>P&L</th>
+                    </tr>
+                </thead>
+                <tbody id="trades-body">
+                    <tr class="empty-row"><td colspan="7">No trades</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Market Maker Panel -->
+        <section class="panel mm-panel" id="mm-panel" style="display: none;">
+            <h3>Market Maker</h3>
+            <div id="mm-cards" class="mm-cards"></div>
+        </section>
+
+        <!-- Activity Log -->
+        <section class="panel activity-panel">
+            <h3>Activity Log <span id="activity-count">(0 events)</span></h3>
+            <div class="activity-log" id="activity-log">
+                <div class="empty-state">No activity yet</div>
+            </div>
+        </section>
+            </div>
+        </div>
+
+        <!-- Spread Scanner Tab (New) -->
+        <div id="spread-scanner-tab" class="tab-content">
+            <!-- New Data Alert -->
+            <div id="new-data-alert" class="new-data-alert hidden">
+                <div class="alert-message">New opportunities found!</div>
+                <button id="btn-update-spreads" class="btn-update-spreads">🔄 Update List</button>
+            </div>
+
+            <!-- Configuration Panel (Collapsible) -->
+            <details class="spread-config-panel">
+                <summary style="cursor: pointer; font-weight: 600; color: #e2e8f0; margin-bottom: 12px;">
+                    ⚙️ Scanner Configuration
+                </summary>
+                <form id="spread-config-form" class="config-form">
+                    <div class="config-field">
+                        <label for="config-fast-refresh">Fast Refresh (seconds)</label>
+                        <input type="number" id="config-fast-refresh" min="1" max="60" value="5">
+                    </div>
+                    <div class="config-field">
+                        <label for="config-slow-scan">Slow Scan (seconds)</label>
+                        <input type="number" id="config-slow-scan" min="10" max="300" value="60">
+                    </div>
+                    <div class="config-field">
+                        <label for="config-min-profit">Min Profit ($)</label>
+                        <input type="number" id="config-min-profit" step="0.01" min="0" value="0.05">
+                    </div>
+                    <div class="config-field">
+                        <label for="config-min-volume">Min Volume</label>
+                        <input type="number" id="config-min-volume" min="0" value="0">
+                    </div>
+                    <div class="config-field">
+                        <label for="config-discover">Auto-Discover Pairs</label>
+                        <input type="checkbox" id="config-discover" checked>
+                    </div>
+                    <div class="config-field">
+                        <button type="button" id="btn-save-config" class="btn-save-config">💾 Save Config</button>
+                    </div>
+                </form>
+            </details>
+
+            <!-- Status Bar -->
+            <div class="spread-status-bar">
+                <div class="status-timestamps">
+                    <span>Display: <span id="timestamp-display">--</span></span>
+                    <span>Scan: <span id="timestamp-scan">--</span></span>
+                </div>
+                <div class="status-actions">
+                    <button id="btn-start-scanner" class="btn-start-scanner btn-start">▶ Start Scanner</button>
+                    <button id="btn-toggle-log" class="btn-toggle-log">☰ Show Log</button>
+                </div>
+            </div>
+
+            <!-- Main Content with Optional Log Panel -->
+            <div id="spread-scanner-content-wrapper">
+                <!-- Spreads Table -->
+                <div class="spread-main-content" id="spread-main-content">
+                    <div class="spreads-table-container">
+                        <table class="spreads-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Event</th>
+                                    <th>Profit</th>
+                                    <th>Ask Prices</th>
+                                    <th>Volume</th>
+                                    <th>Trade</th>
+                                </tr>
+                            </thead>
+                            <tbody id="spreads-table-body">
+                                <tr><td colspan="6" class="empty-state">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Trade Log Panel (Toggleable) -->
+                <div id="trade-log-panel" class="trade-log-panel hidden">
+                    <div class="log-header-bar">
+                        <h3>📋 Trade Log</h3>
+                        <button id="btn-clear-log" class="btn-clear-log">Clear</button>
+                    </div>
+                    <div id="trade-log-entries" class="trade-log-entries">
+                        <!-- Log entries will be added here dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/static/js/dashboard.js"></script>
+    <script src="/static/js/spread_scanner.js"></script>
+    <script>
+        // Tab switching logic
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const targetTab = button.dataset.tab;
+
+                // Update button states
+                document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+
+                // Update tab content
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                document.getElementById(targetTab).classList.add('active');
+            });
+        });
+
+        // Update log panel visibility class
+        document.getElementById('btn-toggle-log')?.addEventListener('click', () => {
+            const mainContent = document.getElementById('spread-main-content');
+            const logPanel = document.getElementById('trade-log-panel');
+
+            if (logPanel.classList.contains('hidden')) {
+                mainContent.classList.add('with-log');
+            } else {
+                mainContent.classList.remove('with-log');
+            }
+        });
+    </script>
+</body>
+</html>

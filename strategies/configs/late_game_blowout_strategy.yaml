@@ -1,0 +1,44 @@
+# Late Game Blowout Strategy Configuration
+# Buys the leading team when they have a commanding lead late in the game.
+# Low-risk: teams rarely come back from large deficits with <10 min remaining.
+
+strategy: LateGameBlowoutStrategy
+version: 1
+
+# Entry criteria
+entry:
+  min_point_differential: 12    # Minimum lead required (12+ is safer)
+  max_time_remaining_seconds: 600  # 10 minutes (Q4/OT only)
+  min_period: 4                 # Q4 or later (5+ = OT)
+
+# Confidence tiers based on lead size
+confidence:
+  high_threshold: 15            # 15+ point lead -> high confidence
+  very_high_threshold: 20       # 20+ point lead -> very high confidence
+
+# Position sizing by confidence
+position:
+  base_size: 5.0                # $5 base bet (medium confidence)
+  high_multiplier: 1.5          # $7.50 for high confidence (base * 1.5)
+  very_high_multiplier: 2.0     # $10.00 for very high confidence (base * 2.0)
+
+# Price / edge limits
+price:
+  max_buy_price: 0.92           # Don't buy above 92 cents (already priced in)
+  min_edge_required: 0.02       # Require at least 2% edge (win_prob - price)
+
+# Stop loss settings
+# Exit if lead shrinks to danger zone while there's still time for a comeback.
+# Based on analysis: +5 threshold is optimal (avoids false exits on winning trades).
+stop_loss:
+  threshold: 5                  # Exit if lead drops to +5 or below
+  min_time_remaining: 180       # Only trigger if > 3 min remaining
+                                # (< 3 min = normal variance, ride it out)
+
+# Timing
+timing:
+  tick_interval_seconds: 5.0    # How often to check markets
+
+# Market filters
+filters:
+  nba_market_prefix: "KXNBAGAME"  # Ticker prefix for NBA game markets

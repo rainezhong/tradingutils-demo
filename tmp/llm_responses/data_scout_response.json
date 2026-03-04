@@ -1,0 +1,54 @@
+{
+  "analysis_plans": [
+    {
+      "name": "BTC Spot-Derivative Latency Arbitrage",
+      "data_sources": ["btc_latency_probe"],
+      "comparison_type": "latency_arbitrage",
+      "edge_definition": "Kraken spot price movement >0.3% precedes Kalshi binary option market adjustment by >2 seconds, creating exploitable mispricing window",
+      "reasoning": "Kraken is a high-volume spot exchange with professional market makers. Kalshi is a retail-focused prediction market with slower price discovery. Information flows: Kraken spot → Kalshi derivatives. The 15-minute binary options (KXBTC15M) should theoretically track spot price, but retail traders may lag by 2-10 seconds.",
+      "expected_pattern": "Kraken spot price jumps >$200 (0.3% at $67k) → Delay of 2-10 seconds → Kalshi yes_mid reprices by >5 cents. Edge window is between Kraken signal and Kalshi adjustment.",
+      "statistical_test": "Detect Kraken price changes >0.3% using rolling 60s average. For each signal, find next Kalshi snapshot within 10s window. Measure time delta, direction alignment, and magnitude of Kalshi adjustment. Calculate hit rate and expected edge per trade.",
+      "join_conditions": {"on": ["timestamp_window"], "method": "For each kraken_snapshots row where price change >0.3%, find kalshi_snapshots rows where timestamp delta <=10s"}
+    },
+    {
+      "name": "BTC Orderbook Imbalance Predictive Signal",
+      "data_sources": ["btc_ob_48h", "btc_probe_l2"],
+      "comparison_type": "orderflow_prediction",
+      "edge_definition": "Kalshi orderbook imbalance (bid_depth/ask_depth ratio) >2.0 or <0.5 predicts near-term price movement (next 30-120 seconds) with >60% accuracy",
+      "reasoning": "Informed traders accumulate positions before price moves. Heavy buying (bid_depth >> ask_depth) suggests informed flow expecting price increase. Kalshi markets have lower liquidity than spot, making orderbook imbalance more informative.",
+      "expected_pattern": "Kalshi orderbook shows bid_depth/ask_depth >2.0 → Within 30-120s, Kraken spot price rises OR Kalshi yes_mid increases by >3 cents. If CEX orderbook also shows imbalance in same direction, signal strength doubles.",
+      "statistical_test": "Calculate Kalshi orderbook imbalance ratio at each snapshot. Label future outcome: did yes_mid or spot_price move >0.2% in next 30/60/120s? Measure precision and recall. Compare with CEX L2 imbalance to test if combined signal improves win rate.",
+      "join_conditions": {"on": ["timestamp_5s_window"], "method": "Join kalshi_orderbook to kraken_trades on ts ± 5s, then to binance/coinbase L2 for CEX imbalance correlation"}
+    },
+    {
+      "name": "NBA In-Game Mispricing vs ESPN Reality",
+      "data_sources": ["probe_nba"],
+      "comparison_type": "forecast_vs_market",
+      "edge_definition": "Kalshi market prices deviate from ESPN-derived true win probability by >10 percentage points during live games, creating arbitrage opportunity",
+      "reasoning": "ESPN data is ground truth (live scores, clock). Kalshi markets should converge to ESPN-implied probability as game progresses. Mispricing arises from: Kalshi traders not watching game live, emotional betting on favorites, liquidity gaps during volatile moments (big run).",
+      "expected_pattern": "ESPN shows home team at 85%+ win probability (big lead, little time left) but Kalshi yes_mid trades at 70-75 cents. Edge = 10-15 cents. As game progresses, Kalshi converges to 95+ cents, capturing 20+ cent gain.",
+      "statistical_test": "Join kalshi_snapshots to truth_readings on ticker + timestamp ± 5s. Calculate mispricing = ABS(truth_probability - yes_mid/100). Filter for mispricing >0.10. Track forward price movement: does Kalshi converge to truth within next 5min?",
+      "join_conditions": {"on": ["ticker", "timestamp_5s_window"], "method": "LEFT JOIN kalshi_snapshots ON truth_readings.ticker AND timestamp delta <5s"}
+    },
+    {
+      "name": "Cross-Exchange Bitcoin Trade Velocity Divergence",
+      "data_sources": ["btc_ob_48h", "btc_probe_l2"],
+      "comparison_type": "cross_exchange_flow",
+      "edge_definition": "Kraken trade velocity (trades per minute) spikes >3 standard deviations above baseline while Binance/Coinbase remain calm, predicting Kalshi repricing lag of 5-15 seconds",
+      "reasoning": "Different exchanges have different trader populations and latency characteristics. Kraken may react first to certain news events or whale movements. Abnormal Kraken trade velocity without corresponding Binance/Coinbase activity suggests Kraken-specific information or early detection, creating temporary cross-exchange arbitrage.",
+      "expected_pattern": "Kraken trade count in 60s window jumps from baseline ~30 trades/min to >100 trades/min (3+ sigma spike). Binance/Coinbase L2 spreads remain tight (no panic). Kraken price moves >0.5% in spike direction. Kalshi lags 5-15s, then adjusts yes_mid by 5-10 cents.",
+      "statistical_test": "Calculate Kraken trades/min using rolling 60s window. Compute baseline (mean, std) over 1-hour lookback. Detect spikes >3 sigma. At spike time, check if CEX spread <5bps and imbalance <0.1 (calm market filter). Measure Kalshi response within 15s.",
+      "join_conditions": {"on": ["timestamp_window"], "method": "GROUP BY 60s bins on kraken_trades to count trades. Join kraken_snapshots, CEX L2, and kalshi_snapshots with timestamp windows"}
+    },
+    {
+      "name": "Kalshi Spread Blowout Mean Reversion",
+      "data_sources": ["btc_ob_48h", "markets"],
+      "comparison_type": "liquidity_event_detection",
+      "edge_definition": "Kalshi orderbook spread blows out from <5 cents to >15 cents while underlying asset (BTC spot) remains stable, indicating temporary illiquidity and mean reversion opportunity",
+      "reasoning": "Prediction markets have lower liquidity than spot. During low-volume periods or when market makers pull orders, spreads can blow out to 15-20 cents even if spot price is calm. This creates mean reversion opportunity if we can distinguish liquidity events from genuine volatility.",
+      "expected_pattern": "Kalshi spread spikes from 2-5 cents to >15 cents. Kraken 60s price range remains <0.2% (calm spot). Kalshi volume drops (depth <5000 contracts). Within 2-5 minutes, spread reverts to <8 cents. Edge = trade the reversion, capturing 5-10 cent edge.",
+      "statistical_test": "Calculate Kalshi spread from orderbook. Detect blowouts: spread >15 cents while prior 5min avg <7 cents. Check if Kraken is stable (price range <0.2%). Check depth <5000 (illiquidity). Measure time to reversion when spread returns to <8 cents. Backtest: enter at mid of blown-out spread, exit when normalized.",
+      "join_conditions": {"on": ["timestamp_5s_window"], "method": "Join kalshi_orderbook to kraken_snapshots on ts ± 5s. Lead kalshi_orderbook by 2-5min windows to find reversion timestamp"}
+    }
+  ]
+}

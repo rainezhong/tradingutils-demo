@@ -1,0 +1,36 @@
+# Market Making Strategy Configuration
+# Targets high-spread markets for liquidity provision
+
+strategy: MarketMakingStrategy
+version: 1
+
+# Quote generation parameters
+quotes:
+  target_spread_pct: 0.04      # 4% spread to capture
+  edge_per_side_pct: 0.005     # 0.5% additional edge per side
+  size: 20                      # Contracts per quote
+
+# Position limits
+position:
+  max_per_market: 50           # Maximum contracts per market
+
+# Inventory management
+inventory:
+  skew_factor: 0.01            # Quote skew based on position
+
+# Market filters - targeting HIGH SPREAD markets
+filters:
+  min_spread_cents: 4          # Only markets with >= 4c spread
+  max_spread_cents: 20         # Avoid extremely illiquid markets
+  min_volume: 50               # Minimum daily volume
+  min_price_cents: 20          # Avoid extreme low prices
+  max_price_cents: 80          # Avoid extreme high prices
+
+# Risk management
+risk:
+  max_loss_per_position: 20.0  # Stop loss per position (dollars)
+  max_daily_loss: 100.0        # Daily loss limit (dollars)
+
+# Timing
+timing:
+  tick_interval_seconds: 2.0   # Quote refresh frequency

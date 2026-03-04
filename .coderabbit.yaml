@@ -1,0 +1,44 @@
+language: en-US
+tone_instructions: >
+  Be concise and direct. Focus on bugs, logic errors, and security issues.
+  Skip stylistic nitpicks — ruff handles formatting. This is a trading system
+  so pay extra attention to numerical precision, race conditions, and order logic.
+early_access: true
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  collapse_walkthrough: true
+  auto_review:
+    enabled: true
+    drafts: false
+
+  path_instructions:
+    - path: "strategies/**"
+      instructions: >
+        These are live trading strategy implementations. Review for:
+        correctness of signal logic, off-by-one errors, floating point
+        comparisons, missing edge cases, and proper use of the I_Strategy
+        interface (get_signal return type, stop() method).
+    - path: "core/**"
+      instructions: >
+        Core infrastructure for order management and exchange connectivity.
+        Review for error handling, connection resilience, and thread safety.
+    - path: "tests/**"
+      instructions: >
+        Focus on test coverage gaps and assertion quality. Make sure tests
+        actually verify behavior, not just that code runs without exceptions.
+
+  path_filters:
+    - "!data/**"
+    - "!**/*.csv"
+    - "!**/*.jsonl"
+    - "!**/*.json"
+    - "!notebooks/**"
+    - "!**/*.pkl"
+    - "!nba_scalper_results.csv"
+
+chat:
+  auto_reply: true

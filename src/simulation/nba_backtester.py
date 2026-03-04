@@ -7,23 +7,141 @@ This module provides a complete backtesting framework that:
 4. Generates detailed reports
 """
 
-import asyncio
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
-from src.core.models import Fill, MarketState
+if TYPE_CHECKING:
+    from src.backtesting.models import ProbabilityModel
+
+from src.core.models import Fill
 from src.kalshi.mock_client import MockKalshiClient
-from src.strategies.late_game_blowout import (
+from strategies.late_game_blowout_strategy import (
     LateGameBlowoutStrategy,
     BlowoutStrategyConfig,
-    BlowoutSignal,
-    Side,
+    BlowoutSide,
 )
 from signal_extraction.data_feeds.score_feed import ScoreAnalyzer
 
 from .nba_recorder import GameRecordingFrame, NBAGameRecorder
-from .nba_replay import NBAGameReplay, MockScoreFeed
+from .nba_replay import NBAGameReplay
+
+
+@dataclass
+class OrderSnapshot:
+    """Snapshot of a single order at a point in time."""
+
+    order_id: str
+    ticker: str
+    side: str
+    action: str
+    price: float
+    size: int
+    status: str
+    filled_size: int
+    remaining_size: int
+
+
+@dataclass
+class OrderSheetSnapshot:
+    """Complete order sheet state at a point in time."""
+
+    timestamp: float
+    frame_idx: int
+
+    # Account state
+    balance: int  # cents
+
+    # Positions: ticker -> position size
+    positions: Dict[str, int]
+
+    # Open orders
+    open_orders: List[OrderSnapshot]
+
+    # Cumulative fills up to this point
+    total_fills: int
+    total_fill_volume: int  # Total contracts filled
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for JSON serialization."""
+        return {
+            "timestamp": self.timestamp,
+            "frame_idx": self.frame_idx,
+            "balance": self.balance,
+            "positions": self.positions,
+            "open_orders": [
+                {
+                    "order_id": o.order_id,
+                    "ticker": o.ticker,
+                    "side": o.side,
+                    "action": o.action,
+                    "price": o.price,
+                    "size": o.size,
+                    "status": o.status,
+                    "filled_size": o.filled_size,
+                    "remaining_size": o.remaining_size,
+                }
+                for o in self.open_orders
+            ],
+            "total_fills": self.total_fills,
+            "total_fill_volume": self.total_fill_volume,
+        }
+
+
+@dataclass
+class FrameRecord:
+    """Complete record of game state and order sheet at a single time step."""
+
+    # Game state
+    timestamp: float
+    frame_idx: int
+    period: int
+    time_remaining: str
+    game_status: str
+    home_score: int
+    away_score: int
+
+    # Market state
+    home_bid: float
+    home_ask: float
+    away_bid: float
+    away_ask: float
+
+    # Order sheet at this frame
+    order_sheet: OrderSheetSnapshot
+
+    # Signal generated at this frame (if any)
+    signal: Optional["SignalRecord"] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for JSON serialization."""
+        return {
+            "timestamp": self.timestamp,
+            "frame_idx": self.frame_idx,
+            "period": self.period,
+            "time_remaining": self.time_remaining,
+            "game_status": self.game_status,
+            "home_score": self.home_score,
+            "away_score": self.away_score,
+            "home_bid": self.home_bid,
+            "home_ask": self.home_ask,
+            "away_bid": self.away_bid,
+            "away_ask": self.away_ask,
+            "order_sheet": self.order_sheet.to_dict(),
+            "signal": {
+                "direction": self.signal.direction,
+                "ticker": self.signal.ticker,
+                "edge_cents": self.signal.edge_cents,
+                "home_win_prob": self.signal.home_win_prob,
+                "market_mid": self.signal.market_mid,
+                "order_placed": self.signal.order_placed,
+                "order_id": self.signal.order_id,
+                "filled": self.signal.filled,
+                "fill_price": self.signal.fill_price,
+            }
+            if self.signal
+            else None,
+        }
 
 
 @dataclass
@@ -112,11 +230,64 @@ class BacktestResult:
     signals: List[SignalRecord]
     fills: List[Fill]
 
+    # Frame-by-frame recording (game + order sheet at each time step)
+    frame_records: List[FrameRecord] = field(default_factory=list)
+
     # Timing
-    started_at: datetime
-    completed_at: datetime
-    replay_speed: float
-    real_duration_seconds: float
+    started_at: datetime = field(default_factory=datetime.now)
+    completed_at: datetime = field(default_factory=datetime.now)
+    replay_speed: float = 1.0
+    real_duration_seconds: float = 0.0
+
+    def save_recording(self, filepath: str) -> None:
+        """Save the complete frame-by-frame recording to JSON.
+
+        Args:
+            filepath: Path to save the recording
+        """
+        import json
+        from pathlib import Path
+
+        path = Path(filepath)
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        data = {
+            "metadata": {
+                "recording_path": self.recording_path,
+                "game_id": self.game_id,
+                "home_team": self.home_team,
+                "away_team": self.away_team,
+                "final_home_score": self.final_home_score,
+                "final_away_score": self.final_away_score,
+                "winner": self.winner,
+                "min_edge_cents": self.min_edge_cents,
+                "max_period": self.max_period,
+                "position_size": self.position_size,
+                "total_frames": len(self.frame_records),
+                "total_signals": len(self.signals),
+                "total_fills": len(self.fills),
+                "started_at": self.started_at.isoformat(),
+                "completed_at": self.completed_at.isoformat(),
+                "replay_speed": self.replay_speed,
+                "real_duration_seconds": self.real_duration_seconds,
+            },
+            "metrics": {
+                "total_frames": self.metrics.total_frames,
+                "total_signals": self.metrics.total_signals,
+                "signals_traded": self.metrics.signals_traded,
+                "orders_filled": self.metrics.orders_filled,
+                "accuracy_pct": self.metrics.accuracy_pct,
+                "gross_pnl": self.metrics.gross_pnl,
+                "net_pnl": self.metrics.net_pnl,
+            },
+            "frames": [fr.to_dict() for fr in self.frame_records],
+        }
+
+        with open(path, "w") as f:
+            json.dump(data, f, indent=2)
+
+        print(f"[Backtest] Saved recording to {filepath}")
+        print(f"[Backtest] Total frames: {len(self.frame_records)}")
 
 
 class NBAStrategyBacktester:
@@ -141,6 +312,7 @@ class NBAStrategyBacktester:
         position_size: int = 10,
         initial_balance: int = 100000,
         fill_probability: float = 0.8,  # Realistic: not all orders fill
+        probability_model: Optional["ProbabilityModel"] = None,  # Walk-forward model
     ):
         """Initialize the backtester.
 
@@ -153,10 +325,15 @@ class NBAStrategyBacktester:
             position_size: Contracts per trade
             initial_balance: Starting balance in cents
             fill_probability: Probability orders fill when price crosses
+            probability_model: Optional walk-forward probability model. If provided,
+                              uses this instead of ScoreAnalyzer for predictions.
+                              This enables proper walk-forward backtesting.
         """
         # Enforce max_period limit - model doesn't work well after halftime
         if max_period > 2:
-            print(f"[Backtester] Warning: max_period={max_period} capped to 2 (first half only)")
+            print(
+                f"[Backtester] Warning: max_period={max_period} capped to 2 (first half only)"
+            )
             max_period = 2
         self.recording = recording
         self.min_edge_cents = min_edge_cents
@@ -164,6 +341,9 @@ class NBAStrategyBacktester:
         self.position_size = position_size
         self.initial_balance = initial_balance
         self.fill_probability = fill_probability
+
+        # Walk-forward probability model (optional)
+        self.probability_model = probability_model
 
         # Will be initialized in run()
         self.mock_client: Optional[MockKalshiClient] = None
@@ -173,6 +353,7 @@ class NBAStrategyBacktester:
         # Tracking
         self.signals: List[SignalRecord] = []
         self.fills: List[Fill] = []
+        self.frame_records: List[FrameRecord] = []
 
         # State
         self._last_signal_time: float = 0.0
@@ -206,6 +387,7 @@ class NBAStrategyBacktester:
         # Reset tracking
         self.signals = []
         self.fills = []
+        self.frame_records = []
         self._last_signal_time = 0.0
 
         frame_count = 0
@@ -213,9 +395,10 @@ class NBAStrategyBacktester:
         # Run replay
         async for frame in self.replay.run(self.mock_client):
             frame_count += 1
+            frame_idx = frame_count - 1
 
             # Evaluate for signals
-            signal = self._evaluate_frame(frame, frame_count - 1)
+            signal = self._evaluate_frame(frame, frame_idx)
 
             if signal:
                 self.signals.append(signal)
@@ -225,8 +408,31 @@ class NBAStrategyBacktester:
                     await self._place_order(signal)
 
                 if verbose:
-                    print(f"[Q{frame.period} {frame.time_remaining}] "
-                          f"SIGNAL: {signal.direction} | Edge: {signal.edge_cents:.1f}¢")
+                    print(
+                        f"[Q{frame.period} {frame.time_remaining}] "
+                        f"SIGNAL: {signal.direction} | Edge: {signal.edge_cents:.1f}¢"
+                    )
+
+            # Capture order sheet state at this frame
+            order_sheet = self._capture_order_sheet(frame.timestamp, frame_idx)
+
+            # Record complete frame state
+            frame_record = FrameRecord(
+                timestamp=frame.timestamp,
+                frame_idx=frame_idx,
+                period=frame.period,
+                time_remaining=frame.time_remaining,
+                game_status=frame.game_status,
+                home_score=frame.home_score,
+                away_score=frame.away_score,
+                home_bid=frame.home_bid,
+                home_ask=frame.home_ask,
+                away_bid=frame.away_bid,
+                away_ask=frame.away_ask,
+                order_sheet=order_sheet,
+                signal=signal,
+            )
+            self.frame_records.append(frame_record)
 
             # Periodic progress
             if verbose and frame_count % 100 == 0:
@@ -271,6 +477,7 @@ class NBAStrategyBacktester:
             metrics=metrics,
             signals=self.signals,
             fills=self.fills,
+            frame_records=self.frame_records,
             started_at=started_at,
             completed_at=completed_at,
             replay_speed=speed,
@@ -278,9 +485,7 @@ class NBAStrategyBacktester:
         )
 
     def _evaluate_frame(
-        self,
-        frame: GameRecordingFrame,
-        frame_idx: int
+        self, frame: GameRecordingFrame, frame_idx: int
     ) -> Optional[SignalRecord]:
         """Evaluate a frame for trading signals."""
 
@@ -294,13 +499,32 @@ class NBAStrategyBacktester:
 
         # Calculate win probability from score
         score_diff = frame.home_score - frame.away_score
-        time_remaining_seconds = self.analyzer.parse_time_remaining(frame.time_remaining)
-
-        home_win_prob = self.analyzer.calculate_win_probability(
-            score_diff,
-            frame.period,
-            time_remaining_seconds,
+        time_remaining_seconds = self.analyzer.parse_time_remaining(
+            frame.time_remaining
         )
+
+        # Use walk-forward probability model if provided
+        if self.probability_model is not None:
+            from src.backtesting.models import GameState
+
+            game_state = GameState(
+                game_id=self.recording.game_id,
+                home_team=self.recording.home_team,
+                away_team=self.recording.away_team,
+                home_score=frame.home_score,
+                away_score=frame.away_score,
+                period=frame.period,
+                time_remaining_seconds=time_remaining_seconds,
+            )
+            prediction = self.probability_model.predict(game_state)
+            home_win_prob = prediction.home_win_prob
+        else:
+            # Fall back to static ScoreAnalyzer
+            home_win_prob = self.analyzer.calculate_win_probability(
+                score_diff,
+                frame.period,
+                time_remaining_seconds,
+            )
 
         # Calculate market mid
         market_mid = (frame.home_bid + frame.home_ask) / 2
@@ -340,6 +564,64 @@ class NBAStrategyBacktester:
             return False
         return True
 
+    def _capture_order_sheet(
+        self, timestamp: float, frame_idx: int
+    ) -> OrderSheetSnapshot:
+        """Capture the current order sheet state from the mock client.
+
+        Args:
+            timestamp: Current timestamp
+            frame_idx: Current frame index
+
+        Returns:
+            OrderSheetSnapshot with current state
+        """
+        if self.mock_client is None:
+            return OrderSheetSnapshot(
+                timestamp=timestamp,
+                frame_idx=frame_idx,
+                balance=0,
+                positions={},
+                open_orders=[],
+                total_fills=0,
+                total_fill_volume=0,
+            )
+
+        # Get open orders
+        open_orders_raw = self.mock_client.get_open_orders()
+        open_orders = [
+            OrderSnapshot(
+                order_id=o["order_id"],
+                ticker=o["ticker"],
+                side=o["side"],
+                action=o["action"],
+                price=o["price"],
+                size=o["size"],
+                status=o["status"],
+                filled_size=o["filled_size"],
+                remaining_size=o["remaining_size"],
+            )
+            for o in open_orders_raw
+        ]
+
+        # Get positions
+        positions = self.mock_client.get_all_positions()
+
+        # Get fill stats
+        fills = self.mock_client.get_fills()
+        total_fills = len(fills)
+        total_fill_volume = sum(f.size for f in fills)
+
+        return OrderSheetSnapshot(
+            timestamp=timestamp,
+            frame_idx=frame_idx,
+            balance=self.mock_client.get_balance(),
+            positions=positions,
+            open_orders=open_orders,
+            total_fills=total_fills,
+            total_fill_volume=total_fill_volume,
+        )
+
     async def _place_order(self, signal: SignalRecord) -> None:
         """Attempt to place an order for a signal."""
         if self.mock_client is None:
@@ -373,7 +655,7 @@ class NBAStrategyBacktester:
                 signal.filled = True
                 signal.fill_price = price
 
-        except Exception as e:
+        except Exception:
             signal.order_placed = False
 
     def _on_fill(self, fill: Fill) -> None:
@@ -403,7 +685,9 @@ class NBAStrategyBacktester:
             if signal.filled and signal.fill_price is not None:
                 if signal.signal_correct:
                     # Win: paid fill_price, receive $1
-                    signal.theoretical_pnl = (1.0 - signal.fill_price) * self.position_size
+                    signal.theoretical_pnl = (
+                        1.0 - signal.fill_price
+                    ) * self.position_size
                 else:
                     # Lose: paid fill_price, receive $0
                     signal.theoretical_pnl = -signal.fill_price * self.position_size
@@ -428,12 +712,20 @@ class NBAStrategyBacktester:
             metrics.max_edge_cents = max(edges)
 
         # Accuracy
-        filled_signals = [s for s in self.signals if s.filled and s.signal_correct is not None]
+        filled_signals = [
+            s for s in self.signals if s.filled and s.signal_correct is not None
+        ]
         if filled_signals:
             metrics.correct_signals = sum(1 for s in filled_signals if s.signal_correct)
-            metrics.incorrect_signals = sum(1 for s in filled_signals if not s.signal_correct)
+            metrics.incorrect_signals = sum(
+                1 for s in filled_signals if not s.signal_correct
+            )
             total_judged = metrics.correct_signals + metrics.incorrect_signals
-            metrics.accuracy_pct = (metrics.correct_signals / total_judged * 100) if total_judged > 0 else 0.0
+            metrics.accuracy_pct = (
+                (metrics.correct_signals / total_judged * 100)
+                if total_judged > 0
+                else 0.0
+            )
 
         # P&L
         for signal in self.signals:
@@ -459,10 +751,16 @@ class NBAStrategyBacktester:
         # By period
         for signal in self.signals:
             period = signal.period
-            metrics.signals_by_period[period] = metrics.signals_by_period.get(period, 0) + 1
+            metrics.signals_by_period[period] = (
+                metrics.signals_by_period.get(period, 0) + 1
+            )
 
         for period in metrics.signals_by_period:
-            period_signals = [s for s in self.signals if s.period == period and s.filled and s.signal_correct is not None]
+            period_signals = [
+                s
+                for s in self.signals
+                if s.period == period and s.filled and s.signal_correct is not None
+            ]
             if period_signals:
                 correct = sum(1 for s in period_signals if s.signal_correct)
                 metrics.accuracy_by_period[period] = correct / len(period_signals) * 100
@@ -493,7 +791,7 @@ def format_backtest_report(result: BacktestResult) -> str:
         f"Total Frames: {m.total_frames}",
         f"Signals Generated: {m.total_signals}",
         f"Signals Traded: {m.signals_traded}",
-        f"Orders Filled: {m.orders_filled} ({m.orders_filled/max(m.signals_traded,1)*100:.1f}% fill rate)",
+        f"Orders Filled: {m.orders_filled} ({m.orders_filled / max(m.signals_traded, 1) * 100:.1f}% fill rate)",
         "",
         f"Avg Edge at Signal: {m.avg_edge_cents:.1f}¢",
         f"Max Edge Seen: {m.max_edge_cents:.1f}¢",
@@ -516,14 +814,16 @@ def format_backtest_report(result: BacktestResult) -> str:
         acc = m.accuracy_by_period.get(period, 0)
         lines.append(f"  Q{period}: {count} signals, {acc:.1f}% accuracy")
 
-    lines.extend([
-        "",
-        "--- Timing ---",
-        f"Replay Speed: {result.replay_speed}x",
-        f"Real Duration: {result.real_duration_seconds:.1f}s",
-        "",
-        "=" * 60,
-    ])
+    lines.extend(
+        [
+            "",
+            "--- Timing ---",
+            f"Replay Speed: {result.replay_speed}x",
+            f"Real Duration: {result.real_duration_seconds:.1f}s",
+            "",
+            "=" * 60,
+        ]
+    )
 
     return "\n".join(lines)
 
@@ -673,7 +973,9 @@ class BlowoutStrategyBacktester:
         self.signals: List[BlowoutSignalRecord] = []
         self._traded_this_game = False  # Only trade once per game
 
-    async def run(self, speed: float = 100.0, verbose: bool = False) -> BlowoutBacktestResult:
+    async def run(
+        self, speed: float = 100.0, verbose: bool = False
+    ) -> BlowoutBacktestResult:
         """Run the backtest.
 
         Args:
@@ -787,7 +1089,7 @@ class BlowoutStrategyBacktester:
             return None
 
         # Determine which ticker to buy
-        if signal.leading_team == Side.HOME:
+        if signal.leading_team == BlowoutSide.HOME:
             ticker = self.recording.home_ticker
             market_price = home_price
         else:

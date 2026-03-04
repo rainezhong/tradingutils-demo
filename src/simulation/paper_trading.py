@@ -302,7 +302,9 @@ class PaperTradingClient(APIClient):
         if not 0.0 <= fill_probability <= 1.0:
             raise ValueError(f"fill_probability must be 0-1, got {fill_probability}")
         if poll_interval_ms <= 0:
-            raise ValueError(f"poll_interval_ms must be positive, got {poll_interval_ms}")
+            raise ValueError(
+                f"poll_interval_ms must be positive, got {poll_interval_ms}"
+            )
 
         self._market_data_client = market_data_client
         self._initial_balance = initial_balance
@@ -399,6 +401,9 @@ class PaperTradingClient(APIClient):
             order_id,
         )
 
+        # Publish to dashboard
+        self._publish_order_to_dashboard(order)
+
         # Check for immediate fill
         self._check_order_fill(order_id)
 
@@ -423,6 +428,9 @@ class PaperTradingClient(APIClient):
 
             order.status = "CANCELED"
             order.updated_at = utc_now()
+
+            # Publish to dashboard
+            self._publish_order_to_dashboard(order)
 
         logger.info("[PAPER] Order canceled: %s", order_id)
         return True
@@ -523,9 +531,7 @@ class PaperTradingClient(APIClient):
         new_fills: List[PaperFill] = []
 
         with self._lock:
-            open_orders = [
-                oid for oid, order in self._orders.items() if order.is_open
-            ]
+            open_orders = [oid for oid, order in self._orders.items() if order.is_open]
 
         for order_id in open_orders:
             fills = self._check_order_fill(order_id)
@@ -601,7 +607,9 @@ class PaperTradingClient(APIClient):
                     current_price = market.mid
                     # P&L = (current - entry) * size for longs
                     # For shorts (negative size), this naturally inverts
-                    unrealized = (current_price - position.avg_entry_price) * position.size
+                    unrealized = (
+                        current_price - position.avg_entry_price
+                    ) * position.size
 
                 total_unrealized += unrealized
 
@@ -676,9 +684,7 @@ class PaperTradingClient(APIClient):
                 ticker: PaperPosition.from_dict(data)
                 for ticker, data in state.get("positions", {}).items()
             }
-            self._fills = [
-                PaperFill.from_dict(data) for data in state.get("fills", [])
-            ]
+            self._fills = [PaperFill.from_dict(data) for data in state.get("fills", [])]
 
         logger.info(
             "[PAPER] State loaded from %s (balance: $%.2f)",
@@ -751,7 +757,9 @@ class PaperTradingClient(APIClient):
         elif side_upper in ("SELL", "ASK"):
             return "ASK"
         else:
-            raise ValueError(f"Invalid side: {side}, must be 'BID', 'ASK', 'buy', or 'sell'")
+            raise ValueError(
+                f"Invalid side: {side}, must be 'BID', 'ASK', 'buy', or 'sell'"
+            )
 
     def _poll_loop(self) -> None:
         """Background polling loop for fill checking."""
@@ -759,15 +767,15 @@ class PaperTradingClient(APIClient):
             try:
                 # Refresh market data for tickers with open orders
                 with self._lock:
-                    tickers = {
-                        o.ticker for o in self._orders.values() if o.is_open
-                    }
+                    tickers = {o.ticker for o in self._orders.values() if o.is_open}
 
                 for ticker in tickers:
                     try:
                         self.get_market_data(ticker)
                     except Exception as e:
-                        logger.debug("Failed to refresh market data for %s: %s", ticker, e)
+                        logger.debug(
+                            "Failed to refresh market data for %s: %s", ticker, e
+                        )
 
                 # Check for fills
                 self.check_fills()
@@ -840,6 +848,7 @@ class PaperTradingClient(APIClient):
             # Apply fill probability for resting orders
             if is_maker:
                 import random
+
                 if random.random() > self._fill_probability:
                     return new_fills
 
@@ -936,9 +945,13 @@ class PaperTradingClient(APIClient):
 
             if position.size >= 0:
                 # Adding to long or opening long
-                total_cost = (position.avg_entry_price * position.size) + (fill.price * fill.size)
+                total_cost = (position.avg_entry_price * position.size) + (
+                    fill.price * fill.size
+                )
                 new_size = position.size + fill.size
-                position.avg_entry_price = total_cost / new_size if new_size > 0 else 0.0
+                position.avg_entry_price = (
+                    total_cost / new_size if new_size > 0 else 0.0
+                )
                 position.size = new_size
             else:
                 # Closing short position
@@ -963,9 +976,13 @@ class PaperTradingClient(APIClient):
 
             if position.size <= 0:
                 # Adding to short or opening short
-                total_cost = (position.avg_entry_price * abs(position.size)) + (fill.price * fill.size)
+                total_cost = (position.avg_entry_price * abs(position.size)) + (
+                    fill.price * fill.size
+                )
                 new_size = position.size - fill.size
-                position.avg_entry_price = total_cost / abs(new_size) if new_size != 0 else 0.0
+                position.avg_entry_price = (
+                    total_cost / abs(new_size) if new_size != 0 else 0.0
+                )
                 position.size = new_size
             else:
                 # Closing long position
@@ -982,3 +999,24 @@ class PaperTradingClient(APIClient):
                     position.avg_entry_price = fill.price
                 elif position.size == 0:
                     position.avg_entry_price = 0.0
+
+        # Publish to dashboard
+        self._publish_fill_to_dashboard(fill)
+        self._publish_position_to_dashboard(ticker)
+        self._publish_summary_to_dashboard()
+
+    def _publish_order_to_dashboard(self, order: PaperOrder) -> None:
+        """Publish order update to dashboard (no-op, dashboard removed)."""
+        pass
+
+    def _publish_position_to_dashboard(self, ticker: str) -> None:
+        """Publish position update to dashboard (no-op, dashboard removed)."""
+        pass
+
+    def _publish_fill_to_dashboard(self, fill: PaperFill) -> None:
+        """Publish fill to dashboard (no-op, dashboard removed)."""
+        pass
+
+    def _publish_summary_to_dashboard(self) -> None:
+        """Publish P&L summary to dashboard (no-op, dashboard removed)."""
+        pass

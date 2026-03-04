@@ -1,0 +1,932 @@
+/* Trading Dashboard Styles */
+
+:root {
+    --bg-primary: #1a1a2e;
+    --bg-secondary: #16213e;
+    --bg-card: #0f3460;
+    --text-primary: #eaeaea;
+    --text-secondary: #a0a0a0;
+    --accent: #e94560;
+    --success: #00d26a;
+    --warning: #ffc107;
+    --danger: #dc3545;
+    --border: #2a3a5e;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+}
+
+header {
+    background: var(--bg-secondary);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+}
+
+header h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.status-bar {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.status-connected {
+    color: var(--success);
+}
+
+.status-connected::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: var(--success);
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.status-disconnected {
+    color: var(--danger);
+}
+
+.status-disconnected::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: var(--danger);
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+/* ==================== Strategy Dashboard Layout ==================== */
+
+.strategy-dashboard {
+    padding: 1.5rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Control Bar */
+.control-bar {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.strategy-select {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.strategy-select label {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.strategy-select select {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    min-width: 180px;
+    cursor: pointer;
+}
+
+.strategy-select select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.game-select {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.game-select label {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.game-select select {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    min-width: 200px;
+    cursor: pointer;
+}
+
+.game-select select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.game-select select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-refresh {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 0.5rem 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+}
+
+.btn-refresh:hover {
+    border-color: var(--accent);
+    color: var(--text-primary);
+}
+
+.mode-toggle {
+    display: flex;
+    gap: 0;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.mode-btn {
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    border: none;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+}
+
+.mode-btn:hover {
+    color: var(--text-primary);
+}
+
+.mode-btn.active {
+    background: var(--accent);
+    color: white;
+}
+
+.mode-btn#mode-live.active {
+    background: var(--success);
+}
+
+.control-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+.btn-start {
+    background: var(--success);
+    color: white;
+    border: none;
+    padding: 0.5rem 1.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: opacity 0.2s;
+}
+
+.btn-start:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.btn-start:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-stop {
+    background: var(--danger);
+    color: white;
+    border: none;
+    padding: 0.5rem 1.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: opacity 0.2s;
+}
+
+.btn-stop:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.btn-stop:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Status Panel */
+.status-panel {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.status-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 100px;
+}
+
+.status-label {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+}
+
+.status-value {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.status-value.pnl.positive {
+    color: var(--success);
+}
+
+.status-value.pnl.negative {
+    color: var(--danger);
+}
+
+/* OMS Metrics Panel */
+.oms-metrics-panel {
+    margin-bottom: 1rem;
+}
+
+.oms-metrics-panel h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.oms-updated {
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+}
+
+.oms-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+
+@media (max-width: 900px) {
+    .oms-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.oms-section h4 {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.oms-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.25rem 0.75rem;
+}
+
+.oms-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.2rem 0;
+}
+
+.oms-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.oms-stat-value {
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+}
+
+.oms-failure-reasons {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+}
+
+.oms-failure-reasons h4 {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+}
+
+.oms-failure-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.oms-failure-tag {
+    background: rgba(220, 53, 69, 0.15);
+    color: var(--danger);
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+}
+
+/* Data Panels (Game + Market) */
+.data-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 800px) {
+    .data-panels {
+        grid-template-columns: 1fr;
+    }
+}
+
+.panel {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    border: 1px solid var(--border);
+}
+
+.panel h3 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Game Display */
+.game-display {
+    min-height: 120px;
+}
+
+.game-score {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.game-score .team {
+    font-size: 1rem;
+    font-weight: 500;
+    min-width: 50px;
+    text-align: center;
+}
+
+.game-score .score {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.game-score .vs {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.game-clock {
+    text-align: center;
+    color: var(--warning);
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.game-prob {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.game-prob .value {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* Order Book Display */
+.orderbook-panel {
+    min-height: 280px;
+}
+
+.orderbook-panel .market-ticker {
+    font-size: 0.85rem;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+    font-family: monospace;
+    text-align: center;
+}
+
+.orderbook-display {
+    display: flex;
+    flex-direction: column;
+    font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+    font-size: 0.8rem;
+}
+
+.orderbook-header {
+    display: grid;
+    grid-template-columns: 1fr 80px 1fr;
+    gap: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0.25rem;
+}
+
+.orderbook-header span:first-child {
+    text-align: right;
+}
+
+.orderbook-header span:last-child {
+    text-align: left;
+}
+
+.orderbook-header span:nth-child(2) {
+    text-align: center;
+}
+
+.orderbook-row {
+    display: grid;
+    grid-template-columns: 1fr 80px 1fr;
+    gap: 0.5rem;
+    padding: 0.2rem 0.5rem;
+    align-items: center;
+}
+
+.orderbook-row:hover {
+    background: var(--bg-card);
+}
+
+.orderbook-bid {
+    text-align: right;
+    position: relative;
+}
+
+.orderbook-ask {
+    text-align: left;
+    position: relative;
+}
+
+.orderbook-price {
+    text-align: center;
+    font-weight: 600;
+}
+
+.orderbook-price.bid-price {
+    color: var(--success);
+}
+
+.orderbook-price.ask-price {
+    color: var(--danger);
+}
+
+.orderbook-size {
+    color: var(--text-primary);
+}
+
+.orderbook-bid .orderbook-size {
+    padding-right: 0.5rem;
+}
+
+.orderbook-ask .orderbook-size {
+    padding-left: 0.5rem;
+}
+
+/* Size bar visualization */
+.orderbook-bid .size-bar {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background: rgba(0, 210, 106, 0.15);
+    z-index: -1;
+}
+
+.orderbook-ask .size-bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background: rgba(220, 53, 69, 0.15);
+    z-index: -1;
+}
+
+/* Spread row */
+.orderbook-spread {
+    display: grid;
+    grid-template-columns: 1fr 80px 1fr;
+    gap: 0.5rem;
+    padding: 0.4rem 0.5rem;
+    background: var(--bg-card);
+    margin: 0.25rem 0;
+    border-radius: 4px;
+}
+
+.orderbook-spread .spread-label {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+}
+
+.orderbook-spread .spread-value {
+    text-align: center;
+    color: var(--warning);
+    font-weight: 500;
+}
+
+.market-info {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.market-info span {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.market-info .value {
+    color: var(--text-primary);
+}
+
+/* Probability Timeline */
+.prob-timeline-panel {
+    margin-bottom: 1rem;
+}
+
+.prob-timeline-panel canvas {
+    max-height: 220px;
+}
+
+/* Positions Panel */
+.positions-panel {
+    margin-bottom: 1rem;
+}
+
+/* Trades Panel */
+.trades-panel {
+    margin-bottom: 1rem;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+thead {
+    position: sticky;
+    top: 0;
+    background: var(--bg-secondary);
+}
+
+th, td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+}
+
+tbody tr:hover {
+    background: var(--bg-card);
+}
+
+.empty-row td {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 2rem;
+}
+
+/* Side Indicators */
+.side-yes {
+    color: var(--success);
+    font-weight: 500;
+}
+
+.side-no {
+    color: var(--danger);
+    font-weight: 500;
+}
+
+/* Action Indicators */
+.action-buy {
+    color: var(--success);
+    font-weight: 500;
+}
+
+.action-sell {
+    color: var(--danger);
+    font-weight: 500;
+}
+
+/* P&L Colors */
+.positive {
+    color: var(--success);
+}
+
+.negative {
+    color: var(--danger);
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 2rem;
+}
+
+/* Market Maker Panel */
+.mm-panel {
+    margin-bottom: 1rem;
+}
+
+.mm-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.mm-card {
+    background: var(--bg-card);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+}
+
+.mm-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.mm-card-ticker {
+    font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--accent);
+}
+
+.mm-card-status {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.mm-status-running {
+    background: rgba(0, 210, 106, 0.15);
+    color: var(--success);
+}
+
+.mm-status-stopped {
+    background: rgba(220, 53, 69, 0.15);
+    color: var(--danger);
+}
+
+.mm-status-dry {
+    background: rgba(255, 193, 7, 0.15);
+    color: var(--warning);
+}
+
+.mm-card-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.2rem 1rem;
+    font-size: 0.8rem;
+}
+
+.mm-card-stat {
+    display: flex;
+    justify-content: space-between;
+}
+
+.mm-card-stat-label {
+    color: var(--text-secondary);
+}
+
+.mm-card-stat-value {
+    font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+    font-weight: 500;
+}
+
+.mm-card-quotes {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+    font-size: 0.8rem;
+}
+
+.mm-quote-label {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+.mm-quote-bid {
+    color: var(--success);
+    font-weight: 600;
+    font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+}
+
+.mm-quote-ask {
+    color: var(--danger);
+    font-weight: 600;
+    font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+}
+
+.mm-quote-spread {
+    color: var(--warning);
+    font-weight: 500;
+    font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+}
+
+/* Activity Log */
+.activity-panel {
+    margin-top: 1rem;
+}
+
+.activity-panel h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+#activity-count {
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+}
+
+.activity-log {
+    max-height: 250px;
+    overflow-y: auto;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+    font-size: 0.8rem;
+    line-height: 1.6;
+}
+
+.activity-entry {
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 80px 60px 1fr;
+    gap: 0.75rem;
+    align-items: start;
+}
+
+.activity-entry:hover {
+    background: var(--bg-card);
+}
+
+.activity-time {
+    color: var(--text-secondary);
+}
+
+.activity-type {
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+}
+
+.activity-type-signal {
+    background: var(--accent);
+    color: white;
+}
+
+.activity-type-order {
+    background: #3498db;
+    color: white;
+}
+
+.activity-type-fill {
+    background: var(--success);
+    color: white;
+}
+
+.activity-type-decision {
+    background: #9b59b6;
+    color: white;
+}
+
+.activity-type-error {
+    background: var(--danger);
+    color: white;
+}
+
+.activity-message {
+    color: var(--text-primary);
+}
+
+.activity-details {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+/* Table container with scroll */
+.table-container {
+    overflow-x: auto;
+    max-height: 300px;
+    overflow-y: auto;
+}

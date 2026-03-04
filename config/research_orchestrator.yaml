@@ -1,0 +1,58 @@
+# Research Orchestrator Configuration
+#
+# This configuration controls the autonomous research pipeline,
+# including data sources, quality filters, and notification settings.
+
+# Research database location
+research_db_path: "data/research.db"
+
+# Reports output directory
+reports_dir: "research/reports"
+
+# Backtest validation settings
+enable_walk_forward: true
+enable_sensitivity: true
+
+# Hypothesis generation limits
+max_hypotheses_per_pattern: 2
+max_patterns_per_source: 5
+
+# Data sources to scan for patterns
+data_sources:
+  - name: "BTC Latency Probe"
+    type: "crypto"
+    db_path: "data/btc_latency_probe.db"
+    enabled: true
+
+  # - name: "NBA Recordings"
+  #   type: "nba"
+  #   recording_path: "data/recordings/nba_game_001.json"
+  #   enabled: false
+
+# Quality filters for accepting hypotheses
+filters:
+  # Minimum Sharpe ratio to pass validation
+  min_sharpe: 0.5
+
+  # Maximum p-value for statistical significance
+  max_pvalue: 0.05
+
+  # Minimum number of trades in backtest
+  min_trades: 20
+
+  # Minimum return percentage
+  min_return_pct: 0.0
+
+# Notification settings for promising strategies
+notifications:
+  # Enable notifications
+  enabled: false
+
+  # Email notifications (requires SMTP setup)
+  email: null  # e.g., "user@example.com"
+
+  # Slack webhook URL
+  slack_webhook: null  # e.g., "https://hooks.slack.com/services/..."
+
+  # Minimum Sharpe ratio to trigger notification
+  min_sharpe_notify: 1.0

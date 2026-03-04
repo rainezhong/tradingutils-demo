@@ -4,9 +4,9 @@ import pytest
 import time
 from datetime import datetime, timedelta
 
-from src.strategies.crypto_latency.config import CryptoLatencyConfig
-from src.strategies.crypto_latency.detector import LatencyDetector, OpportunityType
-from src.strategies.crypto_latency.market_scanner import CryptoMarket
+from strategies.crypto_latency.config import CryptoLatencyConfig
+from strategies.crypto_latency.detector import LatencyDetector, OpportunityType
+from strategies.crypto_latency.market_scanner import CryptoMarket
 
 
 @pytest.fixture
@@ -70,10 +70,10 @@ class TestSlippageAdjustedEdgeCalculation:
     def test_slippage_with_different_amounts(self):
         """Test various slippage amounts."""
         test_cases = [
-            (0.20, 3, 0.17),   # 20% - 3% = 17%
-            (0.15, 3, 0.12),   # 15% - 3% = 12%
-            (0.25, 5, 0.20),   # 25% - 5% = 20%
-            (0.10, 2, 0.08),   # 10% - 2% = 8%
+            (0.20, 3, 0.17),  # 20% - 3% = 17%
+            (0.15, 3, 0.12),  # 15% - 3% = 12%
+            (0.25, 5, 0.20),  # 25% - 5% = 20%
+            (0.10, 2, 0.08),  # 10% - 2% = 8%
         ]
 
         for raw_edge, slippage_cents, expected in test_cases:
@@ -83,8 +83,9 @@ class TestSlippageAdjustedEdgeCalculation:
             )
             detector = LatencyDetector(config)
             adjusted = detector._calculate_slippage_adjusted_edge(raw_edge, "yes")
-            assert adjusted == pytest.approx(expected, abs=0.001), \
+            assert adjusted == pytest.approx(expected, abs=0.001), (
                 f"Failed for raw={raw_edge}, slippage={slippage_cents}"
+            )
 
     def test_slippage_disabled_returns_raw(self, config_without_slippage):
         """With slippage disabled, raw edge should be returned."""

@@ -21,17 +21,18 @@ collector.run(duration_hours=4)
 import sqlite3
 import time
 import threading
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Tuple, Dict, Optional, Any
 from dataclasses import dataclass
 
-from src.core.trading_state import get_trading_state
+from core.trading_state import get_trading_state
 
 
 @dataclass
 class SpreadSnapshot:
     """Minimal snapshot for spread backtesting."""
+
     timestamp: str
     pair_id: str
     a_yes_bid: float
@@ -67,7 +68,9 @@ class SmartSpreadDB:
                 edge REAL
             )
         """)
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_pair_time ON snapshots(pair_id, timestamp)")
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_pair_time ON snapshots(pair_id, timestamp)"
+        )
         conn.execute("CREATE INDEX IF NOT EXISTS idx_edge ON snapshots(edge)")
 
         # Opportunities table - only stores when edge > 0
@@ -86,11 +89,22 @@ class SmartSpreadDB:
 
     def add_snapshot(self, snap: SpreadSnapshot) -> int:
         conn = sqlite3.connect(self.db_path)
-        cur = conn.execute("""
+        cur = conn.execute(
+            """
             INSERT INTO snapshots (timestamp, pair_id, a_bid, a_ask, b_bid, b_ask, combined, edge)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (snap.timestamp, snap.pair_id, snap.a_yes_bid, snap.a_yes_ask,
-              snap.b_yes_bid, snap.b_yes_ask, snap.combined_ask, snap.edge))
+        """,
+            (
+                snap.timestamp,
+                snap.pair_id,
+                snap.a_yes_bid,
+                snap.a_yes_ask,
+                snap.b_yes_bid,
+                snap.b_yes_ask,
+                snap.combined_ask,
+                snap.edge,
+            ),
+        )
         conn.commit()
         row_id = cur.lastrowid
         conn.close()
@@ -101,27 +115,36 @@ class SmartSpreadDB:
         conn = sqlite3.connect(self.db_path)
 
         # Check if there's an open opportunity for this pair
-        cur = conn.execute("""
+        cur = conn.execute(
+            """
             SELECT id, peak_edge, snapshots FROM opportunities
             WHERE pair_id = ? AND end_time IS NULL
             ORDER BY start_time DESC LIMIT 1
-        """, (pair_id,))
+        """,
+            (pair_id,),
+        )
         row = cur.fetchone()
 
         if row:
             # Update existing opportunity
             opp_id, peak, snaps = row
-            conn.execute("""
+            conn.execute(
+                """
                 UPDATE opportunities
                 SET peak_edge = MAX(peak_edge, ?), snapshots = snapshots + 1
                 WHERE id = ?
-            """, (edge, opp_id))
+            """,
+                (edge, opp_id),
+            )
         else:
             # New opportunity
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT INTO opportunities (pair_id, start_time, peak_edge)
                 VALUES (?, ?, ?)
-            """, (pair_id, timestamp, edge))
+            """,
+                (pair_id, timestamp, edge),
+            )
 
         conn.commit()
         conn.close()
@@ -129,10 +152,13 @@ class SmartSpreadDB:
     def close_opportunity(self, pair_id: str, timestamp: str):
         """Close an opportunity window."""
         conn = sqlite3.connect(self.db_path)
-        conn.execute("""
+        conn.execute(
+            """
             UPDATE opportunities SET end_time = ?
             WHERE pair_id = ? AND end_time IS NULL
-        """, (timestamp, pair_id))
+        """,
+            (timestamp, pair_id),
+        )
         conn.commit()
         conn.close()
 
@@ -141,21 +167,25 @@ class SmartSpreadDB:
         conn.row_factory = sqlite3.Row
 
         stats = {}
-        stats['total_snapshots'] = conn.execute("SELECT COUNT(*) FROM snapshots").fetchone()[0]
-        stats['total_opportunities'] = conn.execute("SELECT COUNT(*) FROM opportunities").fetchone()[0]
+        stats["total_snapshots"] = conn.execute(
+            "SELECT COUNT(*) FROM snapshots"
+        ).fetchone()[0]
+        stats["total_opportunities"] = conn.execute(
+            "SELECT COUNT(*) FROM opportunities"
+        ).fetchone()[0]
 
         row = conn.execute("""
             SELECT MIN(timestamp) as first, MAX(timestamp) as last,
                    AVG(edge) as avg_edge, MAX(edge) as max_edge
             FROM snapshots
         """).fetchone()
-        stats['first_snapshot'] = row['first']
-        stats['last_snapshot'] = row['last']
-        stats['avg_edge'] = row['avg_edge']
-        stats['max_edge'] = row['max_edge']
+        stats["first_snapshot"] = row["first"]
+        stats["last_snapshot"] = row["last"]
+        stats["avg_edge"] = row["avg_edge"]
+        stats["max_edge"] = row["max_edge"]
 
         # Positive edge count
-        stats['positive_edge_snapshots'] = conn.execute(
+        stats["positive_edge_snapshots"] = conn.execute(
             "SELECT COUNT(*) FROM snapshots WHERE edge > 0"
         ).fetchone()[0]
 
@@ -175,9 +205,9 @@ class SmartCollector:
     """
 
     # Polling intervals based on edge
-    FAST_INTERVAL = 5      # When edge > -0.01 (within 1%)
-    NORMAL_INTERVAL = 15   # When edge > -0.03 (within 3%)
-    SLOW_INTERVAL = 60     # When edge < -0.03 (wide spread)
+    FAST_INTERVAL = 5  # When edge > -0.01 (within 1%)
+    NORMAL_INTERVAL = 15  # When edge > -0.03 (within 3%)
+    SLOW_INTERVAL = 60  # When edge < -0.03 (wide spread)
 
     def __init__(self, kalshi_client, db_path: str = "data/smart_spreads.db"):
         self.client = kalshi_client
@@ -195,7 +225,7 @@ class SmartCollector:
 
     def _get_api(self):
         """Get underlying API client."""
-        return self.client._api if hasattr(self.client, '_api') else self.client
+        return self.client._api if hasattr(self.client, "_api") else self.client
 
     def _fetch_pair(self, ticker_a: str, ticker_b: str) -> Optional[SpreadSnapshot]:
         """Fetch quotes for a pair."""
@@ -236,7 +266,7 @@ class SmartCollector:
                 combined_ask=combined,
                 edge=edge,
             )
-        except Exception as e:
+        except Exception:
             return None
 
     def _should_poll(self, pair_id: str) -> bool:
@@ -319,12 +349,17 @@ class SmartCollector:
         # Get pairs
         if pairs is None:
             from arb.kalshi_scanner import get_all_known_pairs
+
             pairs = get_all_known_pairs()
 
         if show_progress:
-            print(f"Smart Collector started")
+            print("Smart Collector started")
             print(f"  Pairs: {len(pairs)}")
-            print(f"  Duration: {duration_hours}h" if duration_hours else "  Duration: Until stopped")
+            print(
+                f"  Duration: {duration_hours}h"
+                if duration_hours
+                else "  Duration: Until stopped"
+            )
             print(f"  Fast poll: {self.FAST_INTERVAL}s (edge > -1%)")
             print(f"  Normal poll: {self.NORMAL_INTERVAL}s (edge > -3%)")
             print(f"  Slow poll: {self.SLOW_INTERVAL}s (edge < -3%)")
@@ -345,14 +380,16 @@ class SmartCollector:
                     break
 
                 # Collect
-                collected = self.collect_once(pairs)
+                self.collect_once(pairs)
 
                 if show_progress and iteration % 10 == 0:
                     elapsed = (time.time() - start_time) / 60
-                    stats = self.db.get_stats()
-                    print(f"[{elapsed:.1f}m] Snapshots: {self.snapshots_collected}, "
-                          f"Opportunities: {self.opportunities_found}, "
-                          f"API calls: {self.api_calls}")
+                    self.db.get_stats()
+                    print(
+                        f"[{elapsed:.1f}m] Snapshots: {self.snapshots_collected}, "
+                        f"Opportunities: {self.opportunities_found}, "
+                        f"API calls: {self.api_calls}"
+                    )
 
                 # Brief pause before next round
                 time.sleep(1)
@@ -362,7 +399,7 @@ class SmartCollector:
 
         if show_progress:
             elapsed = (time.time() - start_time) / 60
-            print(f"\nCollection complete")
+            print("\nCollection complete")
             print(f"  Duration: {elapsed:.1f} minutes")
             print(f"  Snapshots: {self.snapshots_collected}")
             print(f"  Opportunities found: {self.opportunities_found}")
@@ -394,6 +431,7 @@ def main():
 
     # Import here to avoid circular imports
     import sys
+
     sys.path.insert(0, ".")
     from src.core.api_client import KalshiClient
     from src.core.config import get_config

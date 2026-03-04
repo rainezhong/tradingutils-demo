@@ -1,0 +1,139 @@
+/Users/raine/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Traceback (most recent call last):
+  File "/Users/raine/tradingutils/scripts/backtest_hold_time_sweep.py", line 120, in main
+    results = run_backtest_with_hold_time(hold_time, db_path)
+  File "/Users/raine/tradingutils/scripts/backtest_hold_time_sweep.py", line 88, in run_backtest_with_hold_time
+    adapter = CryptoScalpAdapter(config=config, db_path=db_path)
+TypeError: __init__() got an unexpected keyword argument 'config'
+Traceback (most recent call last):
+  File "/Users/raine/tradingutils/scripts/backtest_hold_time_sweep.py", line 120, in main
+    results = run_backtest_with_hold_time(hold_time, db_path)
+  File "/Users/raine/tradingutils/scripts/backtest_hold_time_sweep.py", line 88, in run_backtest_with_hold_time
+    adapter = CryptoScalpAdapter(config=config, db_path=db_path)
+TypeError: __init__() got an unexpected keyword argument 'config'
+Traceback (most recent call last):
+  File "/Users/raine/tradingutils/scripts/backtest_hold_time_sweep.py", line 120, in main
+    results = run_backtest_with_hold_time(hold_time, db_path)
+  File "/Users/raine/tradingutils/scripts/backtest_hold_time_sweep.py", line 88, in run_backtest_with_hold_time
+    adapter = CryptoScalpAdapter(config=config, db_path=db_path)
+TypeError: __init__() got an unexpected keyword argument 'config'
+Traceback (most recent call last):
+  File "/Users/raine/tradingutils/scripts/backtest_hold_time_sweep.py", line 120, in main
+    results = run_backtest_with_hold_time(hold_time, db_path)
+  File "/Users/raine/tradingutils/scripts/backtest_hold_time_sweep.py", line 88, in run_backtest_with_hold_time
+    adapter = CryptoScalpAdapter(config=config, db_path=db_path)
+TypeError: __init__() got an unexpected keyword argument 'config'
+Traceback (most recent call last):
+  File "/Users/raine/tradingutils/scripts/backtest_hold_time_sweep.py", line 120, in main
+    results = run_backtest_with_hold_time(hold_time, db_path)
+  File "/Users/raine/tradingutils/scripts/backtest_hold_time_sweep.py", line 88, in run_backtest_with_hold_time
+    adapter = CryptoScalpAdapter(config=config, db_path=db_path)
+TypeError: __init__() got an unexpected keyword argument 'config'
+Traceback (most recent call last):
+  File "/Users/raine/tradingutils/scripts/backtest_hold_time_sweep.py", line 120, in main
+    results = run_backtest_with_hold_time(hold_time, db_path)
+  File "/Users/raine/tradingutils/scripts/backtest_hold_time_sweep.py", line 88, in run_backtest_with_hold_time
+    adapter = CryptoScalpAdapter(config=config, db_path=db_path)
+TypeError: __init__() got an unexpected keyword argument 'config'
+Traceback (most recent call last):
+  File "/Users/raine/tradingutils/scripts/backtest_hold_time_sweep.py", line 120, in main
+    results = run_backtest_with_hold_time(hold_time, db_path)
+  File "/Users/raine/tradingutils/scripts/backtest_hold_time_sweep.py", line 88, in run_backtest_with_hold_time
+    adapter = CryptoScalpAdapter(config=config, db_path=db_path)
+TypeError: __init__() got an unexpected keyword argument 'config'
+Traceback (most recent call last):
+  File "/Users/raine/tradingutils/scripts/backtest_hold_time_sweep.py", line 120, in main
+    results = run_backtest_with_hold_time(hold_time, db_path)
+  File "/Users/raine/tradingutils/scripts/backtest_hold_time_sweep.py", line 88, in run_backtest_with_hold_time
+    adapter = CryptoScalpAdapter(config=config, db_path=db_path)
+TypeError: __init__() got an unexpected keyword argument 'config'
+Traceback (most recent call last):
+  File "/Users/raine/tradingutils/scripts/backtest_hold_time_sweep.py", line 120, in main
+    results = run_backtest_with_hold_time(hold_time, db_path)
+  File "/Users/raine/tradingutils/scripts/backtest_hold_time_sweep.py", line 88, in run_backtest_with_hold_time
+    adapter = CryptoScalpAdapter(config=config, db_path=db_path)
+TypeError: __init__() got an unexpected keyword argument 'config'
+Traceback (most recent call last):
+  File "/Users/raine/tradingutils/scripts/backtest_hold_time_sweep.py", line 120, in main
+    results = run_backtest_with_hold_time(hold_time, db_path)
+  File "/Users/raine/tradingutils/scripts/backtest_hold_time_sweep.py", line 88, in run_backtest_with_hold_time
+    adapter = CryptoScalpAdapter(config=config, db_path=db_path)
+TypeError: __init__() got an unexpected keyword argument 'config'
+Traceback (most recent call last):
+  File "/Users/raine/tradingutils/scripts/backtest_hold_time_sweep.py", line 120, in main
+    results = run_backtest_with_hold_time(hold_time, db_path)
+  File "/Users/raine/tradingutils/scripts/backtest_hold_time_sweep.py", line 88, in run_backtest_with_hold_time
+    adapter = CryptoScalpAdapter(config=config, db_path=db_path)
+TypeError: __init__() got an unexpected keyword argument 'config'
+================================================================================
+HOLD TIME SWEEP BACKTEST
+================================================================================
+Database: data/btc_probe_20260227.db
+Testing hold times: [1, 2, 3, 4, 5, 7, 10, 15, 20, 25, 30]
+Hypothesis: Optimal hold time = 2-4s (based on 3s lag)
+================================================================================
+
+
+================================================================================
+Testing hold_time = 1s
+================================================================================
+ERROR: __init__() got an unexpected keyword argument 'config'
+
+================================================================================
+Testing hold_time = 2s
+================================================================================
+ERROR: __init__() got an unexpected keyword argument 'config'
+
+================================================================================
+Testing hold_time = 3s
+================================================================================
+ERROR: __init__() got an unexpected keyword argument 'config'
+
+================================================================================
+Testing hold_time = 4s
+================================================================================
+ERROR: __init__() got an unexpected keyword argument 'config'
+
+================================================================================
+Testing hold_time = 5s
+================================================================================
+ERROR: __init__() got an unexpected keyword argument 'config'
+
+================================================================================
+Testing hold_time = 7s
+================================================================================
+ERROR: __init__() got an unexpected keyword argument 'config'
+
+================================================================================
+Testing hold_time = 10s
+================================================================================
+ERROR: __init__() got an unexpected keyword argument 'config'
+
+================================================================================
+Testing hold_time = 15s
+================================================================================
+ERROR: __init__() got an unexpected keyword argument 'config'
+
+================================================================================
+Testing hold_time = 20s
+================================================================================
+ERROR: __init__() got an unexpected keyword argument 'config'
+
+================================================================================
+Testing hold_time = 25s
+================================================================================
+ERROR: __init__() got an unexpected keyword argument 'config'
+
+================================================================================
+Testing hold_time = 30s
+================================================================================
+ERROR: __init__() got an unexpected keyword argument 'config'
+
+================================================================================
+SUMMARY TABLE
+================================================================================
+Empty DataFrame
+Columns: []
+Index: []
+

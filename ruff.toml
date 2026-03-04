@@ -1,0 +1,11 @@
+# Ruff defaults select ["E4", "E7", "E9", "F"] — keep those, don't add E501/W
+# E501 (line length) and W29x (whitespace) are handled by ruff format
+
+[lint.per-file-ignores]
+# Scripts do path manipulation before imports — E402 is intentional
+"scripts/*.py" = ["E402"]
+# Archive code is frozen — suppress all lint
+"archive/**" = ["E", "F", "W"]
+# Star-import re-export packages
+"signal_extraction/**" = ["F403"]
+"core/models/__init__.py" = ["F403"]

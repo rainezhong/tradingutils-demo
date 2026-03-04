@@ -1,0 +1,331 @@
+"""Fill simulation models for the unified backtest framework.
+
+A FillModel decides whether a Signal converts into a Fill and at what
+price / fee.  The default ImmediateFillModel fills every signal at its
+limit price (optionally applying slippage and a probabilistic fill rate).
+"""
+
+import logging
+import math
+import random
+import uuid
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from typing import Optional, Tuple
+
+from src.core.models import Fill, MarketState
+from strategies.base import Signal
+
+logger = logging.getLogger(__name__)
+
+
+# Conservative defaults for missing orderbook data
+DEFAULT_LOW_DEPTH = 5  # Conservative minimum depth when data is missing
+DEFAULT_WIDE_SPREAD_CENTS = 10  # Conservative wide spread when data is missing
+DEFAULT_BASE_DEPTH = 50  # Base depth for estimation formula
+
+
+def kalshi_taker_fee(price: float) -> float:
+    """Kalshi taker fee per contract in dollars.
+
+    Formula: min(0.0175, 0.07 * P * (1 - P))
+    where P is the price in decimal (0-1).
+    """
+    if price <= 0 or price >= 1:
+        return 0.0
+    return min(0.0175, 0.07 * price * (1.0 - price))
+
+
+def kalshi_maker_fee(price: float) -> float:
+    """Kalshi maker fee per contract in dollars.
+
+    Formula: min(0.0175, 0.0175 * P * (1 - P))
+    where P is the price in decimal (0-1).
+    """
+    if price <= 0 or price >= 1:
+        return 0.0
+    return min(0.0175, 0.0175 * price * (1.0 - price))
+
+
+@dataclass
+class MarketImpactConfig:
+    """Configuration for market impact modeling.
+
+    Market impact models how large orders move prices against you.
+    Uses a square-root model based on order size relative to available depth.
+
+    Attributes:
+        enable_impact: Whether to apply market impact modeling
+        impact_coeff: Impact coefficient in cents (default: 5.0)
+                     impact = coeff * sqrt(order_size / depth)
+        permanent_fraction: Fraction of impact that persists (default: 0.5)
+                           Models that 50% of price movement is permanent,
+                           50% is temporary and reverts after execution
+        min_depth: Minimum depth to use in calculation (prevents division by zero)
+    """
+    enable_impact: bool = False
+    impact_coeff: float = 5.0  # cents * sqrt(contracts)
+    permanent_fraction: float = 0.5  # 50% of impact persists
+    min_depth: float = 1.0  # minimum depth for sqrt calculation
+
+
+def apply_market_impact(
+    fill_price: float,
+    order_size: int,
+    side: str,
+    available_depth: float,
+    config: MarketImpactConfig,
+) -> float:
+    """Apply market impact to fill price using square-root model.
+
+    Market impact models how large orders move prices against you.
+    The square-root model is empirically validated across many asset classes.
+
+    Formula:
+        impact = coeff * sqrt(order_size / max(depth, min_depth))
+
+    Price adjustment:
+        - BUY orders (BID): price moves UP (worse for buyer)
+        - SELL orders (ASK): price moves DOWN (worse for seller)
+
+    Args:
+        fill_price: Base fill price in dollars (0.0-1.0)
+        order_size: Number of contracts to fill
+        side: "BID" (buying) or "ASK" (selling)
+        available_depth: Available liquidity on opposite side (contracts)
+        config: Market impact configuration
+
+    Returns:
+        Adjusted fill price in dollars, clamped to [0.0, 1.0]
+
+    Examples:
+        >>> config = MarketImpactConfig(enable_impact=True, impact_coeff=5.0)
+        >>> # Buy 10 contracts with 5 available on ask side
+        >>> apply_market_impact(0.50, 10, "BID", 5, config)
+        0.5707...  # Price moved up by ~7 cents
+
+        >>> # Buy 100 contracts with only 10 available (large impact)
+        >>> apply_market_impact(0.50, 100, "BID", 10, config)
+        0.6581...  # Price moved up by ~16 cents
+    """
+    if not config.enable_impact:
+        return fill_price
+
+    if order_size <= 0:
+        return fill_price
+
+    # Use minimum depth to prevent division by zero
+    depth = max(available_depth, config.min_depth)
+
+    # Square-root model: impact scales with sqrt(size/depth)
+    # This is empirically validated across many markets
+    ratio = order_size / depth
+    impact_cents = config.impact_coeff * math.sqrt(ratio)
+
+    # Convert cents to dollars
+    impact_dollars = impact_cents / 100.0
+
+    # Apply directional impact (moves price against you)
+    if side == "BID":
+        # Buying: price moves UP (worse for buyer)
+        adjusted_price = fill_price + impact_dollars
+    else:
+        # Selling: price moves DOWN (worse for seller)
+        adjusted_price = fill_price - impact_dollars
+
+    # Clamp to valid price range [0, 1]
+    return max(0.0, min(1.0, adjusted_price))
+
+
+def estimate_depth_from_spread(
+    spread_cents: Optional[int],
+    base_depth: int = DEFAULT_BASE_DEPTH,
+) -> int:
+    """Estimate orderbook depth from spread when depth data is missing.
+
+    Heuristic: Tight spread suggests better liquidity (more depth).
+    Formula: estimated_depth = base_depth * (100 / max(spread_cents, 1))
+
+    This is a conservative estimate - real depth may be higher or lower.
+    Used only when actual depth data is unavailable.
+
+    Args:
+        spread_cents: Bid-ask spread in cents, or None if also missing
+        base_depth: Base depth for 100-cent (100%) spread (default: 50)
+
+    Returns:
+        Estimated depth in contracts (minimum DEFAULT_LOW_DEPTH)
+
+    Examples:
+        >>> estimate_depth_from_spread(1)  # 1-cent spread
+        5000  # Very tight spread → high estimated depth
+
+        >>> estimate_depth_from_spread(10)  # 10-cent spread
+        500  # Moderate spread → moderate estimated depth
+
+        >>> estimate_depth_from_spread(None)  # Missing spread
+        5  # Conservative fallback
+    """
+    if spread_cents is None or spread_cents <= 0:
+        logger.warning(
+            "Missing or invalid spread data, using conservative depth fallback: %d",
+            DEFAULT_LOW_DEPTH,
+        )
+        return DEFAULT_LOW_DEPTH
+
+    # Inverse relationship: tighter spread → better depth
+    # Normalize by 100-cent (100%) spread as baseline
+    estimated = base_depth * (100 / max(spread_cents, 1))
+
+    # Apply minimum threshold
+    return max(int(estimated), DEFAULT_LOW_DEPTH)
+
+
+def get_orderbook_depth_with_fallback(
+    market: MarketState,
+    side: str,
+) -> Tuple[int, bool]:
+    """Get orderbook depth with fallback estimation if missing.
+
+    Args:
+        market: Market state (may have None depth values)
+        side: "BID" (need ask depth) or "ASK" (need bid depth)
+
+    Returns:
+        Tuple of (depth, is_estimated)
+        - depth: Actual depth or estimated fallback
+        - is_estimated: True if depth was estimated, False if real data
+
+    Examples:
+        >>> market = MarketState(ticker="TEST", timestamp=..., bid=0.45, ask=0.46,
+        ...                      bid_depth=100, ask_depth=50)
+        >>> get_orderbook_depth_with_fallback(market, "BID")  # Need ask depth
+        (50, False)  # Real data available
+
+        >>> market = MarketState(ticker="TEST", timestamp=..., bid=0.45, ask=0.46,
+        ...                      bid_depth=None, ask_depth=None)
+        >>> get_orderbook_depth_with_fallback(market, "BID")  # Need ask depth
+        (5, True)  # Estimated from spread (1 cent)
+    """
+    # Determine which side we need
+    if side == "BID":
+        # Buying: need ask side depth
+        actual_depth = market.ask_depth
+    else:
+        # Selling: need bid side depth
+        actual_depth = market.bid_depth
+
+    # Return real data if available
+    if actual_depth is not None and actual_depth > 0:
+        return actual_depth, False
+
+    # Estimate from spread if available
+    spread_cents = int(market.spread * 100) if market.spread is not None else None
+    estimated_depth = estimate_depth_from_spread(spread_cents)
+
+    logger.debug(
+        "Estimating depth for %s %s: spread=%s cents, estimated_depth=%d",
+        market.ticker,
+        side,
+        spread_cents,
+        estimated_depth,
+    )
+
+    return estimated_depth, True
+
+
+class FillModel(ABC):
+    """Determines whether and how a signal gets filled."""
+
+    @abstractmethod
+    def simulate_fill(
+        self,
+        signal: Signal,
+        market: MarketState,
+    ) -> Optional[Fill]:
+        """Attempt to fill *signal* given current *market* state.
+
+        Returns a Fill if the order would execute, otherwise None.
+        """
+        ...
+
+
+class ImmediateFillModel(FillModel):
+    """Fills every signal immediately at the ask (BID) or bid (ASK).
+
+    Optionally applies:
+    - *fill_probability*: random rejection to simulate partial fills.
+    - *slippage*: additive price worsening (in the same units as price).
+    - *fee_fn*: callable(price) -> per-contract fee in dollars.
+      Defaults to Kalshi taker formula when fee_fn is None.
+    """
+
+    def __init__(
+        self,
+        fill_probability: float = 1.0,
+        slippage: float = 0.0,
+        fee_fn: Optional[object] = None,  # Callable[[float], float]
+    ):
+        self._fill_prob = fill_probability
+        self._slippage = slippage
+        self._fee_fn = fee_fn
+
+    def simulate_fill(
+        self,
+        signal: Signal,
+        market: MarketState,
+    ) -> Optional[Fill]:
+        if self._fill_prob < 1.0 and random.random() > self._fill_prob:
+            return None
+
+        # Determine execution price
+        if signal.side == "BID":
+            exec_price = market.ask + self._slippage
+        else:
+            exec_price = max(0.0, market.bid - self._slippage)
+
+        # Calculate fee
+        if self._fee_fn is not None:
+            fee = self._fee_fn(exec_price) * signal.size
+        else:
+            fee = kalshi_taker_fee(exec_price) * signal.size
+
+        return Fill(
+            ticker=signal.ticker,
+            side=signal.side,
+            price=exec_price,
+            size=signal.size,
+            order_id=uuid.uuid4().hex[:12],
+            fill_id=uuid.uuid4().hex[:12],
+            timestamp=signal.timestamp,
+            fee=fee,
+        )
+
+
+class MakerFillModel(FillModel):
+    """Fills at the signal's stated price (resting quote) with maker fees.
+
+    Designed for market-maker backtests where the adapter controls fill
+    decisions (queue priority, depth-weighted probability) and the fill
+    model just stamps the execution price and fee.
+    """
+
+    def simulate_fill(
+        self,
+        signal: Signal,
+        market: MarketState,
+    ) -> Optional[Fill]:
+        exec_price = signal.price
+        fee = kalshi_maker_fee(exec_price) * signal.size
+
+        return Fill(
+            ticker=signal.ticker,
+            side=signal.side,
+            price=exec_price,
+            size=signal.size,
+            order_id=uuid.uuid4().hex[:12],
+            fill_id=uuid.uuid4().hex[:12],
+            timestamp=signal.timestamp,
+            fee=fee,
+        )

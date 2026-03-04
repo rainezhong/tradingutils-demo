@@ -1,0 +1,30 @@
+# Scalp Strategy Configuration
+# Buys on the "strong side" when price shows directional bias
+
+strategy: ScalpStrategy
+version: 1
+
+# Position sizing
+position:
+  max_per_market: 50      # Max contracts per market
+  order_size: 10          # Contracts per order
+
+# Entry criteria
+entry:
+  min_edge_cents: 2           # Minimum edge to enter (cents)
+  strong_side_threshold: 0.60 # Price threshold for "strong side" (0.60 = 60%)
+
+# Exit criteria
+exit:
+  take_profit_cents: 3    # Target profit per contract (cents)
+  stop_loss_cents: 5      # Max loss per contract (cents)
+  max_hold_seconds: 60.0  # Max time to hold position
+
+# Market filters
+filters:
+  min_volume: 100         # Minimum daily volume
+  max_spread_cents: 5     # Maximum bid-ask spread (cents)
+
+# Timing
+timing:
+  tick_interval_seconds: 1.0  # How often to check markets

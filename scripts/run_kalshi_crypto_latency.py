@@ -9,7 +9,6 @@ Usage:
 
 import argparse
 import logging
-import os
 import sys
 from pathlib import Path
 
@@ -20,8 +19,8 @@ sys.path.insert(0, str(project_root))
 from src.core.api_client import KalshiClient
 from src.core.config import Config, RiskConfig
 from src.risk.risk_manager import RiskManager
-from src.strategies.crypto_latency import CryptoLatencyConfig
-from src.strategies.crypto_latency.kalshi_orchestrator import run_kalshi_orchestrator
+from strategies.crypto_latency import CryptoLatencyConfig
+from strategies.crypto_latency.kalshi_orchestrator import run_kalshi_orchestrator
 
 
 def setup_logging(verbose: bool = False) -> None:
@@ -127,7 +126,8 @@ Examples:
 
     # Verbosity
     parser.add_argument(
-        "-v", "--verbose",
+        "-v",
+        "--verbose",
         action="store_true",
         help="Enable verbose logging",
     )
@@ -177,15 +177,22 @@ class DryRunKalshiClient:
         if self._dry_run and order_id and order_id.startswith("dry_run_"):
             order = self._simulated_orders.get(order_id, {})
             side = order.get("side", "yes")
-            price = order.get(f"{side}_price") or order.get("yes_price") or order.get("no_price") or 50
+            price = (
+                order.get(f"{side}_price")
+                or order.get("yes_price")
+                or order.get("no_price")
+                or 50
+            )
             count = order.get("count", 1)
             # Simulate immediate fill at the limit price
             return {
-                "fills": [{
-                    f"{side}_price": price,
-                    "count": count,
-                    "order_id": order_id,
-                }]
+                "fills": [
+                    {
+                        f"{side}_price": price,
+                        "count": count,
+                        "order_id": order_id,
+                    }
+                ]
             }
         return self._client.get_fills(order_id=order_id, **kwargs)
 
@@ -213,11 +220,13 @@ def main() -> int:
     bankroll = args.bankroll
     if bankroll is None:
         try:
-            resp = kalshi_client._request('GET', '/portfolio/balance')
-            bankroll = resp.get('balance', 0) / 100  # Convert cents to dollars
+            resp = kalshi_client._request("GET", "/portfolio/balance")
+            bankroll = resp.get("balance", 0) / 100  # Convert cents to dollars
             logger.info("Auto-detected bankroll: $%.2f", bankroll)
         except Exception as e:
-            logger.warning("Could not get account balance, using default bankroll: %s", e)
+            logger.warning(
+                "Could not get account balance, using default bankroll: %s", e
+            )
             bankroll = args.max_exposure
 
     # Build strategy config
@@ -239,7 +248,11 @@ def main() -> int:
     logger.info("Duration: %d seconds", args.duration)
     logger.info("Symbols: %s", config.symbols)
     logger.info("Min Edge: %.1f%%", config.min_edge_pct * 100)
-    logger.info("Kelly Fraction: %.1f (%.0f%% Kelly)", config.kelly_fraction, config.kelly_fraction * 100)
+    logger.info(
+        "Kelly Fraction: %.1f (%.0f%% Kelly)",
+        config.kelly_fraction,
+        config.kelly_fraction * 100,
+    )
     logger.info("Bankroll: $%.2f", config.bankroll)
     logger.info("Max Exposure: $%.2f", config.max_total_exposure)
     logger.info("Max Daily Loss: $%.2f", config.max_daily_loss)
@@ -279,7 +292,9 @@ def main() -> int:
 
     # Initialize risk manager
     # Scale position limits based on max exposure
-    max_pos_size = min(int(config.max_position_per_market), int(config.max_total_exposure))
+    max_pos_size = min(
+        int(config.max_position_per_market), int(config.max_total_exposure)
+    )
     risk_config = RiskConfig(
         max_position_size=max_pos_size,
         max_total_position=int(config.max_total_exposure),
@@ -291,7 +306,7 @@ def main() -> int:
     # Run orchestrator
     try:
         logger.info("Starting strategy...")
-        orchestrator = run_kalshi_orchestrator(
+        run_kalshi_orchestrator(
             kalshi_client=kalshi_client,
             config=config,
             risk_manager=risk_manager,

@@ -33,19 +33,10 @@ detector.stop()
 
 import math
 import threading
-import time
-from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import Callable, Dict, List, Optional, Protocol, Tuple
-
-# Dashboard integration (optional - fails gracefully if not available)
-try:
-    from dashboard.state import state_aggregator
-    _DASHBOARD_AVAILABLE = True
-except ImportError:
-    _DASHBOARD_AVAILABLE = False
 
 
 # =============================================================================
@@ -55,6 +46,7 @@ except ImportError:
 
 class Platform(Enum):
     """Supported prediction market platforms."""
+
     KALSHI = "kalshi"
     POLYMARKET = "polymarket"
 
@@ -69,6 +61,7 @@ class FeeStructure:
         min_fee: Minimum fee per order in dollars
         max_fee_per_contract: Maximum fee per contract (cap)
     """
+
     taker_rate: float
     maker_rate: float
     min_fee: float = 0.0
@@ -78,13 +71,13 @@ class FeeStructure:
 # Platform-specific fee structures
 PLATFORM_FEES: Dict[Platform, FeeStructure] = {
     Platform.KALSHI: FeeStructure(
-        taker_rate=0.07,    # 7% of P*(1-P)
+        taker_rate=0.07,  # 7% of P*(1-P)
         maker_rate=0.0175,  # 1.75% of P*(1-P)
         min_fee=0.0,
     ),
     Platform.POLYMARKET: FeeStructure(
-        taker_rate=0.02,    # ~2% flat on notional
-        maker_rate=0.00,    # Makers often free
+        taker_rate=0.02,  # ~2% flat on notional
+        maker_rate=0.00,  # Makers often free
         min_fee=0.0,
     ),
 }
@@ -171,6 +164,7 @@ class MarketQuote:
 
     This is what your cross-platform detection should provide.
     """
+
     platform: Platform
     market_id: str
     market_name: str
@@ -208,6 +202,7 @@ class MatchedMarketPair:
         matched with
         Polymarket "BTC above $100k EOY"
     """
+
     pair_id: str
     event_description: str
 
@@ -243,7 +238,9 @@ class MarketMatcher(Protocol):
         """
         ...
 
-    def get_quotes(self, pair: MatchedMarketPair) -> Tuple[MarketQuote, MarketQuote, MarketQuote, MarketQuote]:
+    def get_quotes(
+        self, pair: MatchedMarketPair
+    ) -> Tuple[MarketQuote, MarketQuote, MarketQuote, MarketQuote]:
         """Get current quotes for a matched pair.
 
         Args:
@@ -262,7 +259,9 @@ class PlaceholderMatcher:
         """Returns empty list - implement your matcher."""
         return []
 
-    def get_quotes(self, pair: MatchedMarketPair) -> Tuple[MarketQuote, MarketQuote, MarketQuote, MarketQuote]:
+    def get_quotes(
+        self, pair: MatchedMarketPair
+    ) -> Tuple[MarketQuote, MarketQuote, MarketQuote, MarketQuote]:
         """Returns dummy quotes - implement your matcher."""
         raise NotImplementedError("Implement your market matcher")
 
@@ -293,11 +292,11 @@ class SpreadOpportunity:
 
     # Profit calculation
     gross_edge_per_contract: float  # Before fees
-    net_edge_per_contract: float    # After fees
+    net_edge_per_contract: float  # After fees
     total_fees_per_contract: float
 
     # Liquidity
-    max_contracts: int      # Limited by available liquidity
+    max_contracts: int  # Limited by available liquidity
     available_liquidity_usd: float
     estimated_profit_usd: float
 
@@ -450,11 +449,11 @@ class SpreadDetector:
                 try:
                     opps = self._analyze_pair(pair)
                     opportunities.extend(opps)
-                except Exception as e:
+                except Exception:
                     # Log but continue with other pairs
                     pass
 
-        except Exception as e:
+        except Exception:
             pass
 
         return opportunities
@@ -464,7 +463,7 @@ class SpreadDetector:
         while not self._stop_event.is_set():
             try:
                 self._detection_cycle()
-            except Exception as e:
+            except Exception:
                 # Log error but keep running
                 pass
 
@@ -497,27 +496,6 @@ class SpreadDetector:
                     alert.opportunity.estimated_profit_usd = opp.estimated_profit_usd
                     alert.times_confirmed += 1
 
-                    # Update dashboard with latest prices
-                    if _DASHBOARD_AVAILABLE:
-                        try:
-                            state_aggregator.publish_opportunity(
-                                id=alert.alert_id,
-                                pair_id=opp.pair.pair_id,
-                                event_description=opp.pair.event_description,
-                                opportunity_type=opp.opportunity_type,
-                                buy_platform=opp.buy_platform.value,
-                                buy_price=opp.buy_price,
-                                sell_platform=opp.sell_platform.value,
-                                sell_price=opp.sell_price,
-                                gross_edge=opp.gross_edge_per_contract,
-                                net_edge=opp.net_edge_per_contract,
-                                max_contracts=opp.max_contracts,
-                                estimated_profit=opp.estimated_profit_usd,
-                                is_active=True,
-                            )
-                        except Exception:
-                            pass
-
         # Mark alerts as inactive if opportunity disappeared
         with self._lock:
             for alert_id, alert in list(self._active_alerts.items()):
@@ -525,13 +503,6 @@ class SpreadDetector:
                 if key not in current_opp_keys:
                     alert.is_active = False
                     del self._active_alerts[alert_id]
-
-                    # Notify dashboard
-                    if _DASHBOARD_AVAILABLE:
-                        try:
-                            state_aggregator.remove_opportunity(alert.alert_id)
-                        except Exception:
-                            pass
 
     def _is_quote_fresh(self, quote: MarketQuote) -> bool:
         """Check if a quote is fresh enough to trust."""
@@ -647,16 +618,20 @@ class SpreadDetector:
         arb_combos = [
             (p1_yes, p2_yes, "yes"),  # Buy P1 YES, sell P2 YES
             (p2_yes, p1_yes, "yes"),  # Buy P2 YES, sell P1 YES
-            (p1_no, p2_no, "no"),     # Buy P1 NO, sell P2 NO
-            (p2_no, p1_no, "no"),     # Buy P2 NO, sell P1 NO
+            (p1_no, p2_no, "no"),  # Buy P1 NO, sell P2 NO
+            (p2_no, p1_no, "no"),  # Buy P2 NO, sell P1 NO
         ]
 
         for buy_quote, sell_quote, outcome in arb_combos:
             if buy_quote.best_ask is None or sell_quote.best_bid is None:
                 continue
 
-            buy_cost = all_in_buy_cost(buy_quote.platform, buy_quote.best_ask, ref_contracts)
-            sell_proceeds = all_in_sell_proceeds(sell_quote.platform, sell_quote.best_bid, ref_contracts)
+            buy_cost = all_in_buy_cost(
+                buy_quote.platform, buy_quote.best_ask, ref_contracts
+            )
+            sell_proceeds = all_in_sell_proceeds(
+                sell_quote.platform, sell_quote.best_bid, ref_contracts
+            )
 
             gross_edge = sell_quote.best_bid - buy_quote.best_ask
             net_edge = sell_proceeds - buy_cost
@@ -671,7 +646,9 @@ class SpreadDetector:
             if available_usd < self.min_liquidity_usd:
                 continue
 
-            total_fees = (buy_cost - buy_quote.best_ask) + (sell_quote.best_bid - sell_proceeds)
+            total_fees = (buy_cost - buy_quote.best_ask) + (
+                sell_quote.best_bid - sell_proceeds
+            )
             estimated_profit = net_edge * available_contracts
 
             opp = SpreadOpportunity(
@@ -718,28 +695,7 @@ class SpreadDetector:
 
         # Trim history
         if len(self._alert_history) > self.max_alerts:
-            self._alert_history = self._alert_history[-self.max_alerts:]
-
-        # Publish to dashboard
-        if _DASHBOARD_AVAILABLE:
-            try:
-                state_aggregator.publish_opportunity(
-                    id=alert_id,
-                    pair_id=opp.pair.pair_id,
-                    event_description=opp.pair.event_description,
-                    opportunity_type=opp.opportunity_type,
-                    buy_platform=opp.buy_platform.value,
-                    buy_price=opp.buy_price,
-                    sell_platform=opp.sell_platform.value,
-                    sell_price=opp.sell_price,
-                    gross_edge=opp.gross_edge_per_contract,
-                    net_edge=opp.net_edge_per_contract,
-                    max_contracts=opp.max_contracts,
-                    estimated_profit=opp.estimated_profit_usd,
-                    is_active=True,
-                )
-            except Exception:
-                pass
+            self._alert_history = self._alert_history[-self.max_alerts :]
 
         # Callback - fire immediately!
         if self.on_alert:

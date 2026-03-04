@@ -1,0 +1,115 @@
+# Crypto Scalp Strategy - TEST Configuration
+# Purpose: Test ONLY max_momentum_ratio filter to isolate its effect
+# Baseline: All other settings match current live config
+# Created: 2026-03-03
+
+# PAPER MODE
+paper_mode: true
+
+# Signal feed
+signal_feed: "all"
+
+# Spot move detection
+spot_lookback_sec: 5.0
+min_spot_move_usd: 15.0  # Keep baseline (not 22)
+
+# MOMENTUM FILTER - THE ONLY CHANGE
+enable_momentum_filter: true
+momentum_threshold: 0.8       # Keep existing minimum
+max_momentum_ratio: 7.0       # NEW: Conservative test (filters ~10-15% of ultra-high spikes)
+
+# Entry filters (baseline settings)
+min_ttx_sec: 180
+max_ttx_sec: 900
+min_kalshi_spread_cents: 0
+max_entry_price_cents: 75
+min_entry_price_cents: 25
+
+# Exit timing (baseline)
+exit_delay_sec: 20.0
+max_hold_sec: 35.0
+
+# Position sizing (paper mode - larger for more data)
+contracts_per_trade: 5
+max_open_positions: 1
+max_total_exposure_usd: 10.0
+
+# Cooldown
+cooldown_sec: 15.0
+
+# Execution
+slippage_buffer_cents: 1
+exit_slippage_cents: 0
+fill_timeout_sec: 3.0
+
+# Order TTL
+max_entry_order_age_seconds: 30.0
+
+# Fill optimization
+limit_order_timeout_sec: 1.5
+market_order_fallback: true
+max_fallback_slippage_cents: 5
+fallback_min_edge_cents: 8
+
+# Pre-flight checks
+max_price_deviation_cents: 10
+adaptive_price_threshold_cents: 5
+
+# Volume filters (BASELINE - not changed)
+min_window_volume:
+  binance: 0.5   # Baseline (not 2.0)
+  coinbase: 0.3  # Baseline (not 1.0)
+  kraken: 0.1    # Baseline (not 0.5)
+min_volume_concentration: 0.0  # Baseline (not 0.15)
+require_multi_exchange_confirm: true
+
+# Regime filter (disabled for clean test)
+regime_window_sec: 60.0
+regime_osc_threshold: 0.0
+
+# Risk
+max_daily_loss_usd: 50.0
+
+# Liquidity protection (baseline)
+min_exit_bid_depth: 3
+max_adverse_exit_cents: 35
+skip_exit_on_thin_liquidity: true
+
+# Entry liquidity check
+enable_entry_liquidity_check: true
+min_entry_bid_depth: 5
+
+# Stop-loss
+enable_stop_loss: true
+stop_loss_cents: 15
+stop_loss_delay_sec: 0.0
+
+# Reversal exit
+enable_reversal_exit: true
+reversal_exit_delay_sec: 2.0
+min_reversal_strength_usd: 10.0
+
+# Position flip (disabled)
+enable_position_flip: false
+
+# Emergency exit
+emergency_exit_ttx_sec: 90
+use_market_order_on_emergency: true
+
+# Stuckness filter (disabled)
+enable_stuckness_filter: false
+
+# Orderbook fallback
+enable_orderbook_rest_fallback: true
+orderbook_rest_poll_interval_sec: 1.0
+
+# Account
+kalshi_user: "env"
+
+# Intervals
+scan_interval_sec: 60.0
+detector_interval_sec: 0.25
+
+# Symbols
+symbols:
+  - BTCUSDT
